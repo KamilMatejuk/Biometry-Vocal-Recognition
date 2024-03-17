@@ -36,25 +36,23 @@ def _load_checkpoint(start_epoch: int, pretrained_weights: str, name: str, devic
     return model
 
 
-def _train(dl: torch.utils.data.DataLoader, device: str, model: Model) -> float:
+def _train(device: str, model: Model) -> float:
     loss_train_per_epoch = []
-    for image, label in tqdm(dl, leave=False):
+    for image, label in tqdm(model.train_dl, leave=False):
         image = image.to(device)
         label = label.to(device)
         pred = model.get_classification(image, label)
         loss = model.get_loss(pred, label)
         model.optimizer.zero_grad()
         loss.backward()
-        # Normalizacja wartości gradientów
-        # torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         model.optimizer.step()
         loss_train_per_epoch.append(loss.item())
     return float(np.mean(loss_train_per_epoch))
 
 
-def _test(dl: torch.utils.data.DataLoader, device: str, model: Model) -> float:
+def _test(device: str, model: Model) -> float:
     metrics_per_epoch = []
-    for image, label in tqdm(dl, leave=False):
+    for image, label in tqdm(model.test_dl, leave=False):
         image = image.to(device)
         label = label.to(device)
         with torch.no_grad():
@@ -68,9 +66,9 @@ def _test(dl: torch.utils.data.DataLoader, device: str, model: Model) -> float:
     return float(np.mean(metrics_per_epoch))
 
 
-def _validate(dl: torch.utils.data.DataLoader, device: str, model: Model) -> float:
+def _validate(device: str, model: Model) -> float:
     loss_val_per_epoch = []
-    for image, label in tqdm(dl, leave=False):
+    for image, label in tqdm(model.val_dl, leave=False):
         image = image.to(device)
         label = label.to(device)
         with torch.no_grad():
@@ -124,16 +122,7 @@ def _save_checkpoints(epochs: int, name: str, curr_epoch: int, early_stop: bool,
             os.system(f'cp data/checkpoints/{name}.{best_idx+1:>03}.chpt data/checkpoints/{name}.{e:>03}.chpt')
 
     
-def train(model: Model,
-          train_dl: torch.utils.data.DataLoader,
-          test_dl: torch.utils.data.DataLoader,
-          val_dl: torch.utils.data.DataLoader,
-          epochs: int,
-          name: str,
-          device: str,
-          pretrained_weights: str = None,
-          save_per_epoch: bool = False):
-
+def train(model: Model, epochs: int, name: str, device: str, pretrained_weights: str = None, save_per_epoch: bool = False):
     # create dirs
     os.makedirs('data/metrics', exist_ok=True)
     os.makedirs('data/checkpoints', exist_ok=True)
@@ -149,9 +138,9 @@ def train(model: Model,
     for epoch in tqdm(range(epochs)):
         if epoch < start_epoch: continue
         scheduler.step()
-        train_loss = _train(train_dl, device, model)
-        test_metrics = _test(test_dl, device, model)
-        val_loss = _validate(val_dl, device, model)
+        train_loss = _train(device, model)
+        test_metrics = _test(device, model)
+        val_loss = _validate(device, model)
         # early stop
         early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 3)
         logs = _save_logs(epochs, name, epoch, early_stop, best_idx, logs, train_loss, val_loss, test_metrics)

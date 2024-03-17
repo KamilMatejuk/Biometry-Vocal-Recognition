@@ -2,15 +2,16 @@
 
 
 import abc
+import torch
 
 
 class Model(abc.ABC):
     def __init__(self) -> None:
-        self.model = None
-        self.optimizer = None
-        self.train_dl = None
-        self.test_dl = None
-        self.val_dl = None
+        self.model: torch.nn.Module = None
+        self.optimizer: torch.optim.Optimizer = None
+        self.train_dl: torch.utils.data.DataLoader = None
+        self.test_dl: torch.utils.data.DataLoader = None
+        self.val_dl: torch.utils.data.DataLoader = None
         self.loss_fn = None
 
     def set_device(self, device: str):
