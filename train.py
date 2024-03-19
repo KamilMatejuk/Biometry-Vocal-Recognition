@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from typing import Callable
+from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 
 from models import Model
 from loggers import train_logger as logger
@@ -50,19 +50,25 @@ def _train(model: Model, dl: torch.utils.data.DataLoader) -> float:
     return float(np.mean(loss_train_per_epoch))
 
 
-def _test(model: Model, dl: torch.utils.data.DataLoader) -> float:
-    metrics_per_epoch = []
+def _test(model: Model, dl: torch.utils.data.DataLoader) -> dict[str, float]:
+    f1_per_epoch = []
+    accuracy_per_epoch = []
+    fpr_per_epoch = []
     for image, label in tqdm(dl, leave=False):
         with torch.no_grad():
             pred = model.get_classification(image, label)
             label = label.detach().cpu().numpy()
             pred = pred.detach().cpu().numpy()
             pred = np.argmax(pred, axis = 1)
-            # precision_per_epoch.append(precision_score(label, pred, average='weighted'))
-            # recall_per_epoch.append(recall_score(label, pred, average='weighted'))
-            # f1_per_epoch.append(f1_score(label, pred, average='weighted'))
-        metrics_per_epoch.append(0)
-    return float(np.mean(metrics_per_epoch))
+            f1_per_epoch.append(f1_score(label, pred))
+            accuracy_per_epoch.append(accuracy_score(label, pred))
+            tn, fp, fn, tp = confusion_matrix(label, pred).ravel()
+            fpr_per_epoch.append(fp / (fp + tn))
+    return {
+        'f1': float(np.mean(f1_per_epoch)),
+        'accuracy': float(np.mean(accuracy_per_epoch)),
+        'false positive rate': float(np.mean(fpr_per_epoch)),
+    }
 
  
 def _validate(model: Model, dl: torch.utils.data.DataLoader) -> float:
@@ -85,12 +91,12 @@ def _is_early_stop(prev_losses: list[float], cur_loss: float, max_epochs_without
 
 
 def _save_logs(epochs: int, name: str, curr_epoch: int, early_stop: bool, best_idx: int,
-               logs: pd.DataFrame, train_loss: float, val_loss: float, test_metrics: float) -> pd.DataFrame:
+               logs: pd.DataFrame, train_loss: float, val_loss: float, test_metrics: dict[str, float]) -> pd.DataFrame:
     logs = pd.concat([logs, pd.DataFrame([{
         'epoch': curr_epoch,
         'loss train': train_loss,
         'loss val': val_loss,
-        'test metrics': test_metrics,
+        **test_metrics,
     }])])
     logs.to_csv(f'data/metrics/{name}.csv', index=False)
     # duplicate for early stop 
