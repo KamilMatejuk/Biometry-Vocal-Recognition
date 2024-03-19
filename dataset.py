@@ -47,13 +47,9 @@ class CelebADataset(torch.utils.data.Dataset):
         logger.debug(f'{self.name} has {images} images of {labels} celebrities (avg {images/labels:.2f} img/celeb)')
 
 
-def partition(root_dir: str,
-              device: str,
-              ratios: list[float],
-              preprocessors: list[Preprocessor]):
+def partition(root_dir: str, ratios: list[float]):
     logger.info('Load and partition dataset into: ' + ' '.join(map(lambda x: f'{x:.0%}', ratios)))
     ratio_train, ratio_test, ratio_val, ratio_db = ratios
-    preprocessor_train, preprocessor_test, preprocessor_val, preprocessor_db = preprocessors
     if abs(1.0 - sum(ratios)) > 0.01:
         msg = f'All test ratios should sum up to 1.0, not {sum(ratios)}'
         logger.error(msg)
@@ -63,9 +59,6 @@ def partition(root_dir: str,
     with open(os.path.join(root_dir, 'identities.txt')) as f:
         for line in f.readlines():
             labels.add(int(line.split(' ')[1]))
-    full = CelebADataset(root_dir, 'Full dataset', device, labels, None)
-    full.stats()
-    del full
     # create set sizes
     k_train = int(len(labels) * ratio_train)
     k_test = int(len(labels) * ratio_test)
@@ -78,18 +71,30 @@ def partition(root_dir: str,
     labels_val = set(random.sample(list(labels), k=k_val))
     labels -= labels_val
     labels_db = labels
-    # create datasets
-    set_train = CelebADataset(root_dir, 'Train', device, labels_train, preprocessor_train)
-    set_test = CelebADataset(root_dir, 'Test', device, labels_test, preprocessor_test)
-    set_val = CelebADataset(root_dir, 'Val', device, labels_val, preprocessor_val)
-    set_db = CelebADataset(root_dir, 'Db', device, labels_db, preprocessor_db)
-    # show stats
-    set_train.stats()
-    set_test.stats()
-    set_val.stats()
-    set_db.stats()
-    return set_train, set_test, set_val, set_db
+    # save labels
+    torch.save(labels_train, os.path.join(root_dir, 'partition_train.lst'))
+    torch.save(labels_test, os.path.join(root_dir, 'partition_test.lst'))
+    torch.save(labels_val, os.path.join(root_dir, 'partition_val.lst'))
+    torch.save(labels_db, os.path.join(root_dir, 'partition_db.lst'))
+
+
+def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None):
+    labels = torch.load(os.path.join(root_dir, f'partition_{stage.lower()}.lst'))
+    dataset = CelebADataset(root_dir, stage, device, labels, preprocessor)
+    dataset.stats()
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
+    return dataloader
+
+
+def get_dl_train(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
+    return get_dl(root_dir, device, 'Train', bs, False, preprocessor)
+def get_dl_test(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
+    return get_dl(root_dir, device, 'Test', bs, False, preprocessor)
+def get_dl_val(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
+    return get_dl(root_dir, device, 'Val', bs, False, preprocessor)
+def get_dl_db(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
+    return get_dl(root_dir, device, 'Db', bs, False, preprocessor)
 
 
 if __name__ == '__main__':
-    set_train, set_test, set_val, set_db = partition('data/inputs', 'cpu', [0.69, 0.15, 0.15, 0.01], [None] * 4)
+    partition('data/inputs', [0.69, 0.15, 0.15, 0.01])

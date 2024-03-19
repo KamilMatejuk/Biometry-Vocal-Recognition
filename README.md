@@ -16,6 +16,7 @@ git submodule update --init --recursive
 bash models/arc_face/setup.sh
 # download dataset
 python3 preprocess_dataset.py
+python3 dataset.py
 ```
 
 # Inne
