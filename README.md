@@ -7,7 +7,16 @@
   * [wprowadzenie do biometrii](https://www.syga.ai.pwr.edu.pl/courses/bio/l01.pdf)
     [przypomnienie zagadnienień z zakresu przetwarzania obrazu](https://www.syga.ai.pwr.edu.pl/courses/bio/l02.pdf)
 
-
+### Uruchomienie
+```
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+git submodule update --init --recursive
+bash models/arc_face/setup.sh
+# download dataset
+python3 preprocess_dataset.py
+```
 
 # Inne
 system autoryzacji użytkownika na podstawie twarzy

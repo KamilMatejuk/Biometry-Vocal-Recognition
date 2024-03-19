@@ -3,16 +3,22 @@
 
 import abc
 import torch
+from PIL import Image
+
+
+class Preprocessor(abc.ABC):
+    @staticmethod
+    @abc.abstractmethod
+    def preprocess(image: Image) -> torch.Tensor:
+        raise NotImplementedError
 
 
 class Model(abc.ABC):
-    def __init__(self) -> None:
+    def __init__(self, device: str) -> None:
+        self.device: str = device
         self.model: torch.nn.Module = None
         self.optimizer: torch.optim.Optimizer = None
-        self.train_dl: torch.utils.data.DataLoader = None
-        self.test_dl: torch.utils.data.DataLoader = None
-        self.val_dl: torch.utils.data.DataLoader = None
-        self.loss_fn = None
+        self.loss_fn: torch.nn.Module = None
 
     def set_device(self, device: str):
         self.device = device
@@ -23,14 +29,6 @@ class Model(abc.ABC):
 
     @abc.abstractmethod
     def save_model_and_optimizer(self, name: str):
-        raise NotImplementedError
-            
-    @abc.abstractmethod
-    def setup_dataloaders(self):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def preprocess(self, image):
         raise NotImplementedError
 
     @abc.abstractmethod

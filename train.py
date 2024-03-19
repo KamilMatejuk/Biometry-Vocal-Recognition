@@ -5,7 +5,9 @@ import pandas as pd
 from tqdm import tqdm
 from typing import Callable
 
-from .models import Model
+from models import Model
+from loggers import train_logger as logger
+
 
 
 # TODO define metrics and how to measure them
@@ -15,11 +17,11 @@ def _load_logs(name: str) -> tuple[int, pd.DataFrame]:
     try:
         logs = pd.read_csv(f'data/metrics/{name}.csv')
         start_epoch = int(logs['epoch'].max()) + 1
-        print(f'Loaded existing logs for {start_epoch} epochs')
-    except:
+        logger.debug(f'Loaded existing logs for {start_epoch} epochs')
+    except Exception as ex:
         logs = pd.DataFrame(columns=['epoch', 'loss train', 'loss val'])
         start_epoch = 0
-        print('Failed loading existing logs')
+        logger.warn(f'Failed loading existing logs: {ex}')
     return start_epoch, logs
 
 
@@ -27,20 +29,18 @@ def _load_checkpoint(start_epoch: int, pretrained_weights: str, name: str, devic
     try:
         if start_epoch == 0 and pretrained_weights is not None:
             checkpoint_file = f'data/checkpoints/{pretrained_weights}'
-        else: checkpoint_file = f'data/checkpoints{name}.chpt'
+        else: checkpoint_file = f'data/checkpoints/{name}.chpt'
         checkpoint = torch.load(checkpoint_file, map_location=torch.device(device))
         model.load_model_and_optimizer(checkpoint)
-        print('Loaded existing checkpoints')
-    except:
-        print('Failed loading existing checkpoints')
+        logger.debug('Loaded existing checkpoints')
+    except Exception as ex:
+        logger.warn(f'Failed loading existing checkpoints: {ex}')
     return model
 
 
-def _train(device: str, model: Model) -> float:
+def _train(model: Model, dl: torch.utils.data.DataLoader) -> float:
     loss_train_per_epoch = []
-    for image, label in tqdm(model.train_dl, leave=False):
-        image = image.to(device)
-        label = label.to(device)
+    for image, label in tqdm(dl, leave=False):
         pred = model.get_classification(image, label)
         loss = model.get_loss(pred, label)
         model.optimizer.zero_grad()
@@ -50,27 +50,24 @@ def _train(device: str, model: Model) -> float:
     return float(np.mean(loss_train_per_epoch))
 
 
-def _test(device: str, model: Model) -> float:
+def _test(model: Model, dl: torch.utils.data.DataLoader) -> float:
     metrics_per_epoch = []
-    for image, label in tqdm(model.test_dl, leave=False):
-        image = image.to(device)
-        label = label.to(device)
+    for image, label in tqdm(dl, leave=False):
         with torch.no_grad():
             pred = model.get_classification(image, label)
-            # pred = pred.detach().cpu().numpy()
-            # pred = np.argmax(pred, axis = 1)
+            label = label.detach().cpu().numpy()
+            pred = pred.detach().cpu().numpy()
+            pred = np.argmax(pred, axis = 1)
             # precision_per_epoch.append(precision_score(label, pred, average='weighted'))
             # recall_per_epoch.append(recall_score(label, pred, average='weighted'))
             # f1_per_epoch.append(f1_score(label, pred, average='weighted'))
         metrics_per_epoch.append(0)
     return float(np.mean(metrics_per_epoch))
 
-
-def _validate(device: str, model: Model) -> float:
+ 
+def _validate(model: Model, dl: torch.utils.data.DataLoader) -> float:
     loss_val_per_epoch = []
-    for image, label in tqdm(model.val_dl, leave=False):
-        image = image.to(device)
-        label = label.to(device)
+    for image, label in tqdm(dl, leave=False):
         with torch.no_grad():
             pred = model.get_classification(image, label)
             loss = model.get_loss(pred, label)
@@ -122,29 +119,37 @@ def _save_checkpoints(epochs: int, name: str, curr_epoch: int, early_stop: bool,
             os.system(f'cp data/checkpoints/{name}.{best_idx+1:>03}.chpt data/checkpoints/{name}.{e:>03}.chpt')
 
     
-def train(model: Model, epochs: int, name: str, device: str, pretrained_weights: str = None, save_per_epoch: bool = False):
+def train(model: Model, epochs: int, name: str, device: str, 
+          train_dl: torch.utils.data.DataLoader,
+          test_dl: torch.utils.data.DataLoader, 
+          val_dl: torch.utils.data.DataLoader, 
+          pretrained_weights: str = None,
+          save_per_epoch: bool = False):
     # create dirs
+    logger.info('Create dirs for data')
     os.makedirs('data/metrics', exist_ok=True)
     os.makedirs('data/checkpoints', exist_ok=True)
     # load history
+    logger.info('Load history')
     start_epoch, logs = _load_logs(name)
     if start_epoch >= epochs:
-        print(f'Found finished training, skipping')
+        logger.debug(f'Found finished training, skipping')
         return
     _load_checkpoint(start_epoch, pretrained_weights, name, device, model)
     # train
-    model.train()
+    logger.info('Start training')
     scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=10, gamma=0.1)
     for epoch in tqdm(range(epochs)):
         if epoch < start_epoch: continue
+        train_loss = _train(model, train_dl)
+        test_metrics = _test(model, test_dl)
+        val_loss = _validate(model, val_dl)
         scheduler.step()
-        train_loss = _train(device, model)
-        test_metrics = _test(device, model)
-        val_loss = _validate(device, model)
         # early stop
         early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 3)
         logs = _save_logs(epochs, name, epoch, early_stop, best_idx, logs, train_loss, val_loss, test_metrics)
         _save_checkpoints(epochs, name, epoch, early_stop, best_idx, model, save_per_epoch)
         if early_stop:
-            print(f'Early stop after {epoch} epochs')
+            logger.debug(f'Early stop after {epoch} epochs')
             break
+    logger.info('Finish training')
