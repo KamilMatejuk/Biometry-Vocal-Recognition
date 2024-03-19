@@ -40,11 +40,17 @@ class ArcFaceModel(Model):
         super().__init__(device)
         self.num_classes = 10177
         self.loss_fn = FocalLoss(2)
-        self.model = ResNetFace(IRBlock, [2, 2, 2, 2], use_se=False).to(self.device)
-        self.metric_fc = ArcMarginProduct(512, self.num_classes, s=30, m=0.5, easy_margin=False).to(self.device)
+        self.model = ResNetFace(IRBlock, [2, 2, 2, 2], use_se=False)
+        self.metric_fc = ArcMarginProduct(512, self.num_classes, s=30, m=0.5, easy_margin=False)
         self.optimizer = torch.optim.SGD(
             [{'params': self.model.parameters()}, {'params': self.metric_fc.parameters()}],
             lr=1e-1, weight_decay=5e-4)
+        self.to_device()
+
+    def to_device(self, device: str | None = None):
+        if device is None: device = self.device
+        self.model.to(device)
+        self.metric_fc.to(device)
 
     def load_model_and_optimizer(self, checkpoint):
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -57,6 +63,7 @@ class ArcFaceModel(Model):
             'metric_fc_state_dict': self.metric_fc.cpu().state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }, f=name)
+        self.to_device()
 
     def get_embedding(self, image):
         return self.model(image)

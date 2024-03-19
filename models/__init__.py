@@ -22,6 +22,10 @@ class Model(abc.ABC):
 
     def set_device(self, device: str):
         self.device = device
+        
+    @abc.abstractmethod
+    def to_device(self, device: str | None = None):
+        raise NotImplementedError
 
     @abc.abstractmethod
     def load_model_and_optimizer(self, checkpoint):

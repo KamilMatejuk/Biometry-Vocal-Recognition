@@ -3,14 +3,11 @@ import torch
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
+from sklearn.metrics import f1_score, accuracy_score
+import warnings; warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from models import Model
 from loggers import train_logger as logger
-
-
-
-# TODO define metrics and how to measure them
 
 
 def _load_logs(name: str) -> tuple[int, pd.DataFrame]:
@@ -53,21 +50,17 @@ def _train(model: Model, dl: torch.utils.data.DataLoader) -> float:
 def _test(model: Model, dl: torch.utils.data.DataLoader) -> dict[str, float]:
     f1_per_epoch = []
     accuracy_per_epoch = []
-    fpr_per_epoch = []
     for image, label in tqdm(dl, leave=False):
         with torch.no_grad():
             pred = model.get_classification(image, label)
             label = label.detach().cpu().numpy()
             pred = pred.detach().cpu().numpy()
             pred = np.argmax(pred, axis = 1)
-            f1_per_epoch.append(f1_score(label, pred))
+            f1_per_epoch.append(f1_score(label, pred, average='micro'))
             accuracy_per_epoch.append(accuracy_score(label, pred))
-            tn, fp, fn, tp = confusion_matrix(label, pred).ravel()
-            fpr_per_epoch.append(fp / (fp + tn))
     return {
         'f1': float(np.mean(f1_per_epoch)),
         'accuracy': float(np.mean(accuracy_per_epoch)),
-        'false positive rate': float(np.mean(fpr_per_epoch)),
     }
 
  
