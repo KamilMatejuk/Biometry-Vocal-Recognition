@@ -145,7 +145,8 @@ def train(model: Model, epochs: int, name: str, device: str,
         val_loss = _validate(model, val_dl)
         scheduler.step()
         # early stop
-        early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 3)
+        # early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 3)
+        early_stop, best_idx = False, -1
         logs = _save_logs(epochs, name, epoch, early_stop, best_idx, logs, train_loss, val_loss, test_metrics)
         _save_checkpoints(epochs, name, epoch, early_stop, best_idx, model, save_per_epoch)
         if early_stop:

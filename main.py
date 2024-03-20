@@ -13,7 +13,7 @@ def action_train():
     dl_test = get_dl_test('data/inputs', device, 64, PreprocessorTest)
     dl_val = get_dl_val('data/inputs', device, 64, PreprocessorTest)
     model = Model(device)
-    train(model, 10, 'arc_face_init', device, dl_train, dl_test, dl_val, None, True)
+    train(model, 50, 'arc_face_init', device, dl_train, dl_test, dl_val, None, True)
 
 
 def action_init_db():
@@ -59,8 +59,8 @@ def action_auth():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', choices=['arc', 'deep', 'ghost', 'insight'], required=True)
-    parser.add_argument('--action', choices=['train', 'init_db', 'add', 'auth'], required=True)
+    parser.add_argument('-m', '--model', choices=['arc', 'deep', 'ghost', 'insight'], required=True)
+    parser.add_argument('-a', '--action', choices=['train', 'init_db', 'add', 'auth'], required=True)
     args = parser.parse_args()
     
     if args.model == 'arc':
