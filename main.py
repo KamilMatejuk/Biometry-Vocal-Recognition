@@ -13,7 +13,7 @@ def action_train():
     dl_test = get_dl_test('data/inputs', device, 64, PreprocessorTest)
     dl_val = get_dl_val('data/inputs', device, 64, PreprocessorTest)
     model = Model(device)
-    train(model, 50, 'arc_face_init', device, dl_train, dl_test, dl_val, None, True)
+    train(model, 1000, 'arc_face_init', device, dl_train, dl_test, dl_val, None, False)
 
 
 def action_init_db():
