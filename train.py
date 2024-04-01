@@ -11,14 +11,16 @@ from loggers import train_logger as logger
 
 
 def _load_logs(name: str) -> tuple[int, pd.DataFrame]:
+    logs = pd.DataFrame(columns=['epoch', 'loss train', 'loss val'])
+    start_epoch = 0
     try:
         logs = pd.read_csv(f'data/metrics/{name}.csv')
         start_epoch = int(logs['epoch'].max()) + 1
         logger.debug(f'Loaded existing logs for {start_epoch} epochs')
+    except FileNotFoundError:
+        logger.warn(f'Failed loading existing logs: File not found')
     except Exception as ex:
-        logs = pd.DataFrame(columns=['epoch', 'loss train', 'loss val'])
-        start_epoch = 0
-        logger.warn(f'Failed loading existing logs: {ex}')
+        logger.exception(f'Failed loading existing logs: {ex}')
     return start_epoch, logs
 
 
@@ -29,8 +31,10 @@ def _load_checkpoint(start_epoch: int, pretrained_weights: str, name: str, devic
         else: checkpoint_file = f'data/checkpoints/{name}.chpt'
         model.load_model_and_optimizer(checkpoint_file)
         logger.debug('Loaded existing checkpoints')
+    except FileNotFoundError:
+        logger.warn(f'Failed loading existing checkpoints: File not found')
     except Exception as ex:
-        logger.warn(f'Failed loading existing checkpoints: {ex}')
+        logger.exception(f'Failed loading existing checkpoints: {ex}')
     return model
 
 
