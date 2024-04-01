@@ -19,6 +19,9 @@ class Model(abc.ABC):
         self.model: torch.nn.Module = None
         self.optimizer: torch.optim.Optimizer = None
         self.loss_fn: torch.nn.Module = None
+    
+    def __str__(self):
+        return self.__name__.replace('Model', '')
 
     def set_device(self, device: str):
         self.device = device
