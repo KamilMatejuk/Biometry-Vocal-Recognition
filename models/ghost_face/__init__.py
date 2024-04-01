@@ -12,7 +12,6 @@ from loggers import ghost_face_logger as logger
 class GhostFacePreprocessorTrain(Preprocessor):
     @staticmethod
     def preprocess(image: Image) -> torch.Tensor:
-        # image = image.convert('L')
         trans = transforms.Compose([
             transforms.RandomResizedCrop(size=(128, 128), scale=(0.08, 1.0), ratio=(0.75, 1.3333), interpolation=transforms.InterpolationMode.BICUBIC),
             transforms.RandomHorizontalFlip(p=0.5),
@@ -26,7 +25,6 @@ class GhostFacePreprocessorTrain(Preprocessor):
 class GhostFacePreprocessorTest(Preprocessor):
     @staticmethod
     def preprocess(image: Image) -> torch.Tensor:
-        image = image.convert('L')
         trans = transforms.Compose([
             transforms.Resize((128, 128)),
             transforms.ToTensor(),
@@ -36,11 +34,11 @@ class GhostFacePreprocessorTest(Preprocessor):
 
 
 class GhostFaceModel(Model):
-    def __init__(self, device: str) -> None:
-        super().__init__(device)
-        self.num_classes = 10177
+    def __init__(self, device: str, config: dict) -> None:
+        super().__init__(device, config)
+        self.num_classes = self.config['num_classes']
         self.loss_fn = torch.nn.CrossEntropyLoss()
-        self.model = ghostnetv2(num_classes=self.num_classes, width=1.0, dropout=0.0, args=None)
+        self.model = ghostnetv2(num_classes=self.num_classes, width=self.config['width'], dropout=self.config['dropout'], args=None)
         self.optimizer = torch.optim.SGD(params=self.model.parameters(),
             lr=1e-2, momentum=0.9, weight_decay=1e-4)
         self.to_device()
@@ -53,9 +51,13 @@ class GhostFaceModel(Model):
     def load_model_and_optimizer(self, checkpoint_file: str):
         logger.info(f'Loading from file {checkpoint_file}')
         checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
+        # # to load and update class number
+        # self.model.load_state_dict(checkpoint, strict=False)
+        # self.model.classifier = torch.nn.Linear(in_features=1280, out_features=10177, bias=True)
+        # self.save_model_and_optimizer(checkpoint_file)
+        # exit(0)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        pass
 
     def save_model_and_optimizer(self, name: str):
         torch.save(obj={

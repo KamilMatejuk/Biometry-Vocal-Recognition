@@ -14,8 +14,9 @@ class Preprocessor(abc.ABC):
 
 
 class Model(abc.ABC):
-    def __init__(self, device: str) -> None:
+    def __init__(self, device: str, config: dict) -> None:
         self.device: str = device
+        self.config: dict = config
         self.model: torch.nn.Module = None
         self.optimizer: torch.optim.Optimizer = None
         self.loss_fn: torch.nn.Module = None

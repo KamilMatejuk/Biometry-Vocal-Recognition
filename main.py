@@ -1,3 +1,4 @@
+import yaml
 import torch
 import argparse
 from tqdm import tqdm
@@ -8,17 +9,17 @@ from loggers import main_logger as logger
 from train import train
 
 
-def action_train(model_name: str):
+def action_train(model_name: str, config: dict):
     dl_train = get_dl_train('data/inputs', device, 16, PreprocessorTrain)
     dl_test = get_dl_test('data/inputs', device, 64, PreprocessorTest)
     dl_val = get_dl_val('data/inputs', device, 64, PreprocessorTest)
-    model = Model(device)
+    model = Model(device, config)
     train(model, 1000, f'{model}/{model_name}', device, dl_train, dl_test, dl_val, None, False)
 
 
-def action_init_db(model_name: str):
+def action_init_db(model_name: str, config: dict):
     dl_db = get_dl_db('data/inputs', device, 1, PreprocessorTest)
-    model = Model(device)
+    model = Model(device, config)
     model.load_model_and_optimizer(f'{model}/{model_name}')
     init_empty(model)
     for image, label in tqdm(dl_db):
@@ -26,27 +27,27 @@ def action_init_db(model_name: str):
         add(label, embedding)
 
 
-def action_add(model_name: str):
+def action_add(model_name: str, config: dict):
     # get image from 
     # get label from cmd
     label = 'random'
     image = torch.rand((128, 128))
     image = PreprocessorTest.preprocess(image)
     image = image.to(device)
-    model = Model(device)
+    model = Model(device, config)
     model.load_model_and_optimizer(f'{model}/{model_name}')
     embedding = model.get_embedding(image)
     add(label, embedding)
 
 
-def action_auth(model_name: str):
+def action_auth(model_name: str, config: dict):
     # get image from 
     # get label from cmd
     label = 'random'
     image = torch.rand((128, 128))
     image = PreprocessorTest.preprocess(image)
     image = image.to(device)
-    model = Model(device)
+    model = Model(device, config)
     model.load_model_and_optimizer(f'{model}/{model_name}')
     embedding = model.get_embedding(image)
     similar = get_similar(embedding, threshold=0.1)
@@ -62,7 +63,15 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', choices=['arc', 'deep', 'ghost', 'insight'], required=True)
     parser.add_argument('-n', '--name', default='init')
     parser.add_argument('-a', '--action', choices=['train', 'init_db', 'add', 'auth'], required=True)
+    parser.add_argument('-c', '--config', default='config.yml')
     args = parser.parse_args()
+    
+    with open(args.config) as f:
+        config = yaml.safe_load(f)
+    config = config.get(args.model, {})
+    config = {**config.get('all', {}), **config.get(args.name, {})}
+    logger.info(f'Loaded config from {args.config}')
+    logger.debug(config)
     
     if args.model == 'arc':
         try:
@@ -101,7 +110,7 @@ if __name__ == '__main__':
     device = torch.device('cuda')
     logger.info(f'Using device {device}')
 
-    if args.action == 'train': action_train(args.name)
-    elif args.action == 'init_db': action_init_db(args.name)
-    elif args.action == 'add': action_add(args.name)
-    elif args.action == 'auth': action_auth(args.name)
+    if args.action == 'train': action_train(args.name, config)
+    elif args.action == 'init_db': action_init_db(args.name, config)
+    elif args.action == 'add': action_add(args.name, config)
+    elif args.action == 'auth': action_auth(args.name, config)

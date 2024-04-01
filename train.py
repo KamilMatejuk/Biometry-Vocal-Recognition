@@ -21,6 +21,7 @@ def _load_logs(name: str) -> tuple[int, pd.DataFrame]:
         logger.warn(f'Failed loading existing logs: File not found')
     except Exception as ex:
         logger.exception(f'Failed loading existing logs: {ex}')
+        exit(1)
     return start_epoch, logs
 
 
@@ -35,6 +36,7 @@ def _load_checkpoint(start_epoch: int, pretrained_weights: str, name: str, devic
         logger.warn(f'Failed loading existing checkpoints: File not found')
     except Exception as ex:
         logger.exception(f'Failed loading existing checkpoints: {ex}')
+        exit(1)
     return model
 
 
