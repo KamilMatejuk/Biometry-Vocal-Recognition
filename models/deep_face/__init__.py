@@ -5,7 +5,7 @@ from torchvision import transforms
 # from models.deep_face.src.models import FocalLoss, ResNetFace, IRBlock, DeepMarginProduct
 
 from models import Model, Preprocessor
-from loggers import Deep_face_logger as logger
+from loggers import deep_face_logger as logger
 
 
 class DeepFacePreprocessorTrain(Preprocessor):
@@ -51,6 +51,7 @@ class DeepFaceModel(Model):
         # self.metric_fc.to(device)
 
     def load_model_and_optimizer(self, checkpoint_file: str):
+        logger.info(f'Loading from file {checkpoint_file}')
         checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
         # self.model.load_state_dict(checkpoint['model_state_dict'])
         # self.metric_fc.load_state_dict(checkpoint['metric_fc_state_dict'])
