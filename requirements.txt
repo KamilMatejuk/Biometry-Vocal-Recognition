@@ -1,4 +1,5 @@
 tqdm
+timm
 torch
 pandas
 matplotlib
