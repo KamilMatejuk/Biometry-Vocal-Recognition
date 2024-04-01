@@ -1,11 +1,14 @@
 import torch
 from PIL import Image
 from torchvision import transforms
+# from timm.models import create_model
 
+from models.ghost_face.src.ghostnetv2_pytorch.model.ghostnetv2_torch import ghostnetv2
 # from models.ghost_face.src.models import FocalLoss, ResNetFace, IRBlock, GhostMarginProduct
 
 from models import Model, Preprocessor
-from loggers import Ghost_face_logger as logger
+from loggers import ghost_face_logger as logger
+
 
 
 class GhostFacePreprocessorTrain(Preprocessor):
@@ -36,8 +39,9 @@ class GhostFacePreprocessorTest(Preprocessor):
 class GhostFaceModel(Model):
     def __init__(self, device: str) -> None:
         super().__init__(device)
-        # self.num_classes = 10177
+        self.num_classes = 10177
         # self.loss_fn = FocalLoss(2)
+        self.model = ghostnetv2(num_classes=self.num_classes, width=1.0, dropout=0.0, args=None)
         # self.model = ResNetFace(IRBlock, [2, 2, 2, 2], use_se=False)
         # self.metric_fc = GhostMarginProduct(512, self.num_classes, s=30, m=0.5, easy_margin=False)
         # self.optimizer = torch.optim.SGD(
@@ -50,7 +54,8 @@ class GhostFaceModel(Model):
         # self.model.to(device)
         # self.metric_fc.to(device)
 
-    def load_model_and_optimizer(self, checkpoint):
+    def load_model_and_optimizer(self, checkpoint_file: str):
+        checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
         # self.model.load_state_dict(checkpoint['model_state_dict'])
         # self.metric_fc.load_state_dict(checkpoint['metric_fc_state_dict'])
         # self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

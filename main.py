@@ -8,25 +8,25 @@ from loggers import main_logger as logger
 from train import train
 
 
-def action_train():
+def action_train(model_name: str):
     dl_train = get_dl_train('data/inputs', device, 16, PreprocessorTrain)
     dl_test = get_dl_test('data/inputs', device, 64, PreprocessorTest)
     dl_val = get_dl_val('data/inputs', device, 64, PreprocessorTest)
     model = Model(device)
-    train(model, 1000, 'arc_face_init', device, dl_train, dl_test, dl_val, None, False)
+    train(model, 1000, f'{model.__name__}_{model_name}', device, dl_train, dl_test, dl_val, None, False)
 
 
-def action_init_db():
+def action_init_db(model_name: str):
     dl_db = get_dl_db('data/inputs', device, 1, PreprocessorTest)
     model = Model(device)
-    model.load_model_and_optimizer()
+    model.load_model_and_optimizer(f'{model.__name__}_{model_name}')
     init_empty(Model.__name__)
     for image, label in tqdm(dl_db):
         embedding = model.get_embedding(image)
         add(label, embedding)
 
 
-def action_add():
+def action_add(model_name: str):
     # get image from 
     # get label from cmd
     label = 'random'
@@ -34,12 +34,12 @@ def action_add():
     image = PreprocessorTest.preprocess(image)
     image = image.to(device)
     model = Model(device)
-    model.load_model_and_optimizer()
+    model.load_model_and_optimizer(f'{model.__name__}_{model_name}')
     embedding = model.get_embedding(image)
     add(label, embedding)
 
 
-def action_auth():
+def action_auth(model_name: str):
     # get image from 
     # get label from cmd
     label = 'random'
@@ -47,7 +47,7 @@ def action_auth():
     image = PreprocessorTest.preprocess(image)
     image = image.to(device)
     model = Model(device)
-    model.load_model_and_optimizer()
+    model.load_model_and_optimizer(f'{model.__name__}_{model_name}')
     embedding = model.get_embedding(image)
     similar = get_similar(embedding, threshold=0.1)
     for s in similar:
@@ -60,6 +60,7 @@ def action_auth():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', choices=['arc', 'deep', 'ghost', 'insight'], required=True)
+    parser.add_argument('-n', '--name', default='init')
     parser.add_argument('-a', '--action', choices=['train', 'init_db', 'add', 'auth'], required=True)
     args = parser.parse_args()
     
@@ -80,8 +81,8 @@ if __name__ == '__main__':
     elif args.model == 'ghost':
         try:
             from models.ghost_face import GhostFaceModel as Model
-            from models.ghost_face import GhostFacePreprocessor as PreprocessorTrain
-            from models.ghost_face import GhostFacePreprocessor as PreprocessorTest
+            from models.ghost_face import GhostFacePreprocessorTrain as PreprocessorTrain
+            from models.ghost_face import GhostFacePreprocessorTest as PreprocessorTest
         except Exception as ex:
             raise ImportError(f'Cannot import wrapper for GhostFace model: {ex}')
     elif args.model == 'insight':
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     device = torch.device('cuda')
     logger.info(f'Using device {device}')
 
-    if args.action == 'train': action_train()
-    elif args.action == 'init_db': action_init_db()
-    elif args.action == 'add': action_add()
-    elif args.action == 'auth': action_auth()
+    if args.action == 'train': action_train(args.name)
+    elif args.action == 'init_db': action_init_db(args.name)
+    elif args.action == 'add': action_add(args.name)
+    elif args.action == 'auth': action_auth(args.name)

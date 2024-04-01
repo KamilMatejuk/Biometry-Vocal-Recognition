@@ -52,7 +52,8 @@ class ArcFaceModel(Model):
         self.model.to(device)
         self.metric_fc.to(device)
 
-    def load_model_and_optimizer(self, checkpoint):
+    def load_model_and_optimizer(self, checkpoint_file: str):
+        checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.metric_fc.load_state_dict(checkpoint['metric_fc_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

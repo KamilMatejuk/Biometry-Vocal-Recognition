@@ -27,8 +27,7 @@ def _load_checkpoint(start_epoch: int, pretrained_weights: str, name: str, devic
         if start_epoch == 0 and pretrained_weights is not None:
             checkpoint_file = f'data/checkpoints/{pretrained_weights}'
         else: checkpoint_file = f'data/checkpoints/{name}.chpt'
-        checkpoint = torch.load(checkpoint_file, map_location=torch.device(device))
-        model.load_model_and_optimizer(checkpoint)
+        model.load_model_and_optimizer(checkpoint_file)
         logger.debug('Loaded existing checkpoints')
     except Exception as ex:
         logger.warn(f'Failed loading existing checkpoints: {ex}')
