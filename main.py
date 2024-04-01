@@ -70,29 +70,33 @@ if __name__ == '__main__':
             from models.arc_face import ArcFacePreprocessorTrain as PreprocessorTrain
             from models.arc_face import ArcFacePreprocessorTest as PreprocessorTest
         except Exception as ex:
-            raise ImportError(f'Cannot import wrapper for ArcFace model: {ex}')
+            logger.exception(f'Cannot import wrapper for ArcFace model: {ex}')
+            exit(1)
     elif args.model == 'deep':
         try:
             from models.deep_face import DeepFaceModel as Model
             from models.deep_face import DeepFacePreprocessor as PreprocessorTrain
             from models.deep_face import DeepFacePreprocessor as PreprocessorTest
         except Exception as ex:
-            raise ImportError(f'Cannot import wrapper for DeepFace model: {ex}')
+            logger.exception(f'Cannot import wrapper for DeepFace model: {ex}')
+            exit(1)
     elif args.model == 'ghost':
         try:
             from models.ghost_face import GhostFaceModel as Model
             from models.ghost_face import GhostFacePreprocessorTrain as PreprocessorTrain
             from models.ghost_face import GhostFacePreprocessorTest as PreprocessorTest
         except Exception as ex:
-            raise ImportError(f'Cannot import wrapper for GhostFace model: {ex}')
+            logger.exception(f'Cannot import wrapper for GhostFace model: {ex}')
+            exit(1)
     elif args.model == 'insight':
         try:
             from models.insight_face import InsightFaceModel as Model
             from models.insight_face import InsightFacePreprocessor as PreprocessorTrain
             from models.insight_face import InsightFacePreprocessor as PreprocessorTest
         except Exception as ex:
-            raise ImportError(f'Cannot import wrapper for InsightFace model: {ex}')
-    
+            logger.exception(f'Cannot import wrapper for InsightFace model: {ex}')
+            exit(1)
+
     # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     device = torch.device('cuda')
     logger.info(f'Using device {device}')
