@@ -21,7 +21,7 @@ class Model(abc.ABC):
         self.loss_fn: torch.nn.Module = None
     
     def __str__(self):
-        return self.__name__.replace('Model', '')
+        return self.__class__.__name__.replace('Model', '')
 
     def set_device(self, device: str):
         self.device = device
