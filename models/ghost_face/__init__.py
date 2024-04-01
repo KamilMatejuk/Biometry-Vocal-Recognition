@@ -51,13 +51,19 @@ class GhostFaceModel(Model):
     def load_model_and_optimizer(self, checkpoint_file: str):
         logger.info(f'Loading from file {checkpoint_file}')
         checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
-        # # to load and update class number
-        # self.model.load_state_dict(checkpoint, strict=False)
-        # self.model.classifier = torch.nn.Linear(in_features=1280, out_features=10177, bias=True)
-        # self.save_model_and_optimizer(checkpoint_file)
-        # exit(0)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        try:
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        except RuntimeError as ex:
+            if 'size mismatch' not in str(ex): raise ex
+            if '_resize' in checkpoint_file: raise ex
+            logger.warning(f'Size mismatch, attempting resizing num_classes to {self.num_classes}')
+            self.model = ghostnetv2(num_classes=10177, width=self.config['width'], dropout=self.config['dropout'], args=None)
+            self.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.model.classifier = torch.nn.Linear(in_features=1280, out_features=self.num_classes, bias=True)
+            self.save_model_and_optimizer(checkpoint_file + f'_resized_{self.num_classes}')
+            self.load_model_and_optimizer(checkpoint_file + f'_resized_{self.num_classes}')
 
     def save_model_and_optimizer(self, name: str):
         torch.save(obj={

@@ -1,6 +1,6 @@
 ghost:
   all:
-    num_classes: 10177
+    num_classes: 100 #10177
     dropout: 0.0
   init_1.0:
     width: 1.0
