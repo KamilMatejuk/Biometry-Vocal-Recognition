@@ -56,6 +56,8 @@ class CelebADataset(torch.utils.data.Dataset):
         logger.debug(f'{self.name} has {images} images of {labels} celebrities (avg {images/labels:.2f} img/celeb)')
 
 
+N_USERS = 1000
+
 def partition(root_dir: str):
     logger.info('Load and partition dataset')
     # gather labels
@@ -74,9 +76,9 @@ def partition(root_dir: str):
     labels = list(map(lambda x: x[1], data))
     logger.debug(f'Data length after filtering: {len(data)}')
     # exclude db (100 users)
-    labels_db = sorted(list(labels))[-100:]
+    labels_db = sorted(list(labels))[-N_USERS:]
     data_db = list(filter(lambda x: x[1] in labels_db, data))
-    torch.save(data_db, os.path.join(root_dir, 'partition_db_100.data'))
+    torch.save(data_db, os.path.join(root_dir, f'partition_db_{N_USERS}.data'))
     # remap labels
     data = list(filter(lambda x: x[1] not in labels_db, data))
     old_labels = sorted(list(set(map(lambda x: x[1], data))))
@@ -97,13 +99,13 @@ def partition(root_dir: str):
         elif i in test_ids: data_test.append(x)
         else: data_val.append(x)
     # save labels
-    torch.save(data_train, os.path.join(root_dir, 'partition_train_100.data'))
-    torch.save(data_test, os.path.join(root_dir, 'partition_test_100.data'))
-    torch.save(data_val, os.path.join(root_dir, 'partition_val_100.data'))
+    torch.save(data_train, os.path.join(root_dir, f'partition_train_{N_USERS}.data'))
+    torch.save(data_test, os.path.join(root_dir, f'partition_test_{N_USERS}.data'))
+    torch.save(data_val, os.path.join(root_dir, f'partition_val_{N_USERS}.data'))
 
 
 def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None):
-    data = torch.load(os.path.join(root_dir, f'partition_{stage.lower()}_100.data'))
+    data = torch.load(os.path.join(root_dir, f'partition_{stage.lower()}_{N_USERS}.data'))
     dataset = CelebADataset(root_dir, stage, device, data, preprocessor)
     dataset.stats()
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
