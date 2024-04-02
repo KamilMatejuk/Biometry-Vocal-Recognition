@@ -39,6 +39,7 @@ class GhostFaceModel(Model):
         self.num_classes = self.config['num_classes']
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.model = ghostnetv2(num_classes=self.num_classes, width=self.config['width'], dropout=self.config['dropout'], args=None)
+        self.model.classifier_act = torch.nn.Softmax(dim=1)
         self.optimizer = torch.optim.SGD(params=self.model.parameters(),
             lr=1e-2, momentum=0.9, weight_decay=1e-4)
         self.to_device()
@@ -85,7 +86,9 @@ class GhostFaceModel(Model):
         return x
     
     def get_classification(self, image, label):
-        return self.model(image)
+        x = self.model(image)
+        x = self.model.classifier_act(x)
+        return x
 
     def get_loss(self, image, label):
         return self.loss_fn(image, label)

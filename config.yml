@@ -8,3 +8,9 @@ ghost:
     width: 1.3
   init_1.6:
     width: 1.6
+  softmax_1.0:
+    width: 1.0
+  softmax_1.3:
+    width: 1.3
+  softmax_1.6:
+    width: 1.6
