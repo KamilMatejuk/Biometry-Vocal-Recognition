@@ -20,8 +20,8 @@ def action_train(model_name: str, config: dict):
 def action_init_db(model_name: str, config: dict):
     dl_db = get_dl_db('data/inputs', device, 1, PreprocessorTest)
     model = Model(device, config)
-    model.load_model_and_optimizer(f'{model}/{model_name}')
-    init_empty(model)
+    model.load_model_and_optimizer(f'data/checkpoints/{model}/{model_name}.chpt')
+    init_empty(f'{model}/{model_name}')
     for image, label in tqdm(dl_db):
         embedding = model.get_embedding(image)
         add(label, embedding)
@@ -35,9 +35,9 @@ def action_add(model_name: str, config: dict):
     image = PreprocessorTest.preprocess(image)
     image = image.to(device)
     model = Model(device, config)
-    model.load_model_and_optimizer(f'{model}/{model_name}')
+    model.load_model_and_optimizer(f'data/checkpoints/{model}/{model_name}.chpt')
     embedding = model.get_embedding(image)
-    add(label, embedding)
+    add(f'{model}/{model_name}', label, embedding)
 
 
 def action_auth(model_name: str, config: dict):
@@ -48,9 +48,9 @@ def action_auth(model_name: str, config: dict):
     image = PreprocessorTest.preprocess(image)
     image = image.to(device)
     model = Model(device, config)
-    model.load_model_and_optimizer(f'{model}/{model_name}')
+    model.load_model_and_optimizer(f'data/checkpoints/{model}/{model_name}.chpt')
     embedding = model.get_embedding(image)
-    similar = get_similar(embedding, threshold=0.1)
+    similar = get_similar(f'{model}/{model_name}', embedding, threshold=0.1)
     for s in similar:
         if s == label:
             logger.info('Identity confirmed')

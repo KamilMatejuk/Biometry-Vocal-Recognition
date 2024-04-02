@@ -4,6 +4,7 @@ import logging
 main_logger = logging.getLogger('main')
 dataset_logger = logging.getLogger('dataset')
 train_logger = logging.getLogger('train')
+db_logger = logging.getLogger('db')
 
 arc_face_logger = logging.getLogger('arc_face')
 deep_face_logger = logging.getLogger('deep_face')
@@ -12,7 +13,7 @@ insight_face_logger = logging.getLogger('insight_face')
 
 
 __model_loggers__ = [arc_face_logger, deep_face_logger, ghost_face_logger, insight_face_logger]
-__all_loggers__ = [main_logger, dataset_logger, train_logger] + __model_loggers__
+__all_loggers__ = [main_logger, dataset_logger, train_logger, db_logger] + __model_loggers__
 
 
 class AnsiColorFormatter(logging.Formatter):
