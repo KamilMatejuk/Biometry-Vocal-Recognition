@@ -10,11 +10,11 @@ from train import train
 
 
 def action_train(model_name: str, config: dict):
-    dl_train = get_dl_train('data/inputs', device, 16, PreprocessorTrain)
-    dl_test = get_dl_test('data/inputs', device, 64, PreprocessorTest)
-    dl_val = get_dl_val('data/inputs', device, 64, PreprocessorTest)
+    dl_train = get_dl_train('data/inputs', device, 32, PreprocessorTrain)
+    dl_test = get_dl_test('data/inputs', device, 32, PreprocessorTest)
+    dl_val = get_dl_val('data/inputs', device, 32, PreprocessorTest)
     model = Model(device, config)
-    train(model, 300, f'{model}/{model_name}', device, dl_train, dl_test, dl_val, None, True)
+    train(model, 100, f'{model}/{model_name}', device, dl_train, dl_test, dl_val, None, False)
 
 
 def action_init_db(model_name: str, config: dict):

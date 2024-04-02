@@ -54,7 +54,7 @@ class GhostFaceModel(Model):
         checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
         try:
             self.model.load_state_dict(checkpoint['model_state_dict'])
-            # self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         except RuntimeError as ex:
             if 'size mismatch' not in str(ex): raise ex
             if '_resize' in checkpoint_file: raise ex
@@ -63,6 +63,7 @@ class GhostFaceModel(Model):
             self.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             self.model.classifier = torch.nn.Linear(in_features=1280, out_features=self.num_classes, bias=True)
+            self.model.classifier_act = torch.nn.Softmax(dim=1)
             self.save_model_and_optimizer(checkpoint_file + f'_resized_{self.num_classes}')
             self.load_model_and_optimizer(checkpoint_file + f'_resized_{self.num_classes}')
 
@@ -75,13 +76,13 @@ class GhostFaceModel(Model):
 
     def get_embedding(self, image):
         # forward without self.classifier call
-        x = self.conv_stem(image)
-        x = self.bn1(x)
-        x = self.act1(x)
-        x = self.blocks(x)
-        x = self.global_pool(x)
-        x = self.conv_head(x)
-        x = self.act2(x)
+        x = self.model.conv_stem(image)
+        x = self.model.bn1(x)
+        x = self.model.act1(x)
+        x = self.model.blocks(x)
+        x = self.model.global_pool(x)
+        x = self.model.conv_head(x)
+        x = self.model.act2(x)
         x = x.view(x.size(0), -1)
         return x
     
