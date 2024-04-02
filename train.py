@@ -142,13 +142,13 @@ def train(model: Model, epochs: int, name: str, device: str,
     _load_checkpoint(start_epoch, pretrained_weights, name, device, model)
     # train
     logger.info('Start training')
-    scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=10, gamma=0.1)
+    # scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=10, gamma=0.1)
     for epoch in tqdm(range(epochs)):
         if epoch < start_epoch: continue
         train_loss = _train(model, train_dl)
         test_metrics = _test(model, test_dl)
         val_loss = _validate(model, val_dl)
-        scheduler.step()
+        # scheduler.step()
         # early stop
         # early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 3)
         early_stop, best_idx = False, -1
@@ -157,4 +157,4 @@ def train(model: Model, epochs: int, name: str, device: str,
         if early_stop:
             logger.debug(f'Early stop after {epoch} epochs')
             break
-    logger.info('Finish training')
+    logger.info(f'Finish training with {logs.iloc[-1]["accuracy"]:.2%} accuracy')
