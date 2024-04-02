@@ -107,7 +107,8 @@ if __name__ == '__main__':
             exit(1)
 
     # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    device = torch.device('cuda')
+    # device = torch.device('cuda')
+    device = torch.device('cpu')
     logger.info(f'Using device {device}')
 
     if args.action == 'train': action_train(args.name, config)
