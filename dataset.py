@@ -56,7 +56,7 @@ class CelebADataset(torch.utils.data.Dataset):
         logger.debug(f'{self.name} has {images} images of {labels} celebrities (avg {images/labels:.2f} img/celeb)')
 
 
-N_USERS = 1000
+N_USERS = 100
 
 def partition(root_dir: str):
     logger.info('Load and partition dataset')
