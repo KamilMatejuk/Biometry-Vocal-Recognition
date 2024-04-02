@@ -151,10 +151,10 @@ def train(model: Model, epochs: int, name: str, device: str,
         test_metrics = _test(model, test_dl)
         val_loss = _validate(model, val_dl)
         # scheduler.step()
-        early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 3)
+        early_stop, best_idx = _is_early_stop(list(logs['loss val']), val_loss, 10)
         # early_stop, best_idx = False, -1
-        logs = _save_logs(epochs, name, epoch, early_stop, best_idx, logs, train_loss, val_loss, test_metrics)
-        _save_checkpoints(epochs, name, epoch, early_stop, best_idx, model, save_per_epoch)
+        logs = _save_logs(epochs, name, epoch, False, best_idx, logs, train_loss, val_loss, test_metrics)
+        _save_checkpoints(epochs, name, epoch, False, best_idx, model, save_per_epoch)
         if early_stop:
             logger.debug(f'Early stop after {epoch} epochs')
             break
