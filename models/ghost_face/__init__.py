@@ -41,7 +41,7 @@ class GhostFaceModel(Model):
         self.model = ghostnetv2(num_classes=self.num_classes, width=self.config['width'], dropout=self.config['dropout'], args=None)
         self.model.classifier_act = torch.nn.Softmax(dim=1)
         self.optimizer = torch.optim.SGD(params=self.model.parameters(),
-            lr=1e-2, momentum=0.9, weight_decay=1e-4)
+            lr=float(self.config['lr']), momentum=self.config['momentum'], weight_decay=float(self.config['wd']))
         self.to_device()
 
     def to_device(self, device: str | None = None):
@@ -54,7 +54,7 @@ class GhostFaceModel(Model):
         checkpoint = torch.load(checkpoint_file, map_location=torch.device(self.device))
         try:
             self.model.load_state_dict(checkpoint['model_state_dict'])
-            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            # self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         except RuntimeError as ex:
             if 'size mismatch' not in str(ex): raise ex
             if '_resize' in checkpoint_file: raise ex

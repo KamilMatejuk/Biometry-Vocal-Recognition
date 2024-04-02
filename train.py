@@ -145,7 +145,9 @@ def train(model: Model, epochs: int, name: str, device: str,
     # scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=10, gamma=0.1)
     for epoch in tqdm(range(epochs)):
         if epoch < start_epoch: continue
+        model.model.train()
         train_loss = _train(model, train_dl)
+        model.model.eval()
         test_metrics = _test(model, test_dl)
         val_loss = _validate(model, val_dl)
         # scheduler.step()
