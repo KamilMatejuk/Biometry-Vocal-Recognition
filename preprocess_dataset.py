@@ -5,7 +5,7 @@ from PIL import Image
 
 if __name__ == '__main__':
     root_dir = 'data/inputs'
-    size = 512
+    size = 256
 
     os.makedirs(os.path.join(root_dir, 'images_resized'), exist_ok=True)
     for img_name in tqdm.tqdm(os.listdir(os.path.join(root_dir, 'images'))):

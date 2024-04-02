@@ -37,7 +37,7 @@ class CelebADataset(torch.utils.data.Dataset):
         assert os.path.exists(os.path.join(self.dir, 'images_resized', img_name)),\
             logger.error(f'Couldn\'t find {img_name}')
         # save reference to memmory
-        self.data.append((img_name, label)) # TODO https://stackoverflow.com/questions/51691563/cuda-runtime-error-59-device-side-assert-triggered
+        self.data.append((img_name, label))
 
     def __getitem__(self, i: int):
         img_name, label = self.data[i]
@@ -56,8 +56,6 @@ class CelebADataset(torch.utils.data.Dataset):
         logger.debug(f'{self.name} has {images} images of {labels} celebrities (avg {images/labels:.2f} img/celeb)')
 
 
-N_USERS = 100
-
 def partition(root_dir: str):
     logger.info('Load and partition dataset')
     # gather labels
@@ -75,15 +73,15 @@ def partition(root_dir: str):
     data = set(filter(lambda x: x[1] in filtered_labels, data))
     labels = list(map(lambda x: x[1], data))
     logger.debug(f'Data length after filtering: {len(data)}')
+    CelebADataset(root_dir, 'all', 'cpu', data, None).stats()
     # exclude db (100 users)
-    labels_db = sorted(list(labels))[-N_USERS:]
+    labels_db = sorted(list(set(labels)))[-100:]
     data_db = list(filter(lambda x: x[1] in labels_db, data))
-    torch.save(data_db, os.path.join(root_dir, f'partition_db_{N_USERS}.data'))
+    torch.save(data_db, os.path.join(root_dir, f'partition_db.data'))
     # remap labels
     data = list(filter(lambda x: x[1] not in labels_db, data))
     old_labels = sorted(list(set(map(lambda x: x[1], data))))
-    # new_labels = list(range(len(old_labels)))
-    new_labels = list(range(100))
+    new_labels = list(range(len(old_labels)))
     label_mapping = {o: n for o, n in zip(old_labels, new_labels)}
     data = [(img, label_mapping[lab]) if lab in label_mapping else None for (img, lab) in data]
     data = list(filter(lambda x: x is not None, data))
@@ -99,13 +97,14 @@ def partition(root_dir: str):
         elif i in test_ids: data_test.append(x)
         else: data_val.append(x)
     # save labels
-    torch.save(data_train, os.path.join(root_dir, f'partition_train_{N_USERS}.data'))
-    torch.save(data_test, os.path.join(root_dir, f'partition_test_{N_USERS}.data'))
-    torch.save(data_val, os.path.join(root_dir, f'partition_val_{N_USERS}.data'))
+    torch.save(data_train, os.path.join(root_dir, f'partition_train_full.data'))
+    torch.save(data_test, os.path.join(root_dir, f'partition_test_full.data'))
+    torch.save(data_val, os.path.join(root_dir, f'partition_val_full.data'))
 
 
 def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None):
-    data = torch.load(os.path.join(root_dir, f'partition_{stage.lower()}_{N_USERS}.data'))
+    datafile = f'partition_db.data' if stage == 'Db' else f'partition_{stage.lower()}_full.data'
+    data = torch.load(os.path.join(root_dir, datafile))
     dataset = CelebADataset(root_dir, stage, device, data, preprocessor)
     dataset.stats()
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
@@ -124,3 +123,7 @@ def get_dl_db(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | 
 
 if __name__ == '__main__':
     partition('data/inputs')
+    dl_train = get_dl_train('data/inputs', 'cpu', 1, None)
+    dl_test = get_dl_test('data/inputs', 'cpu', 1, None)
+    dl_val = get_dl_val('data/inputs', 'cpu', 1, None)
+    dl_db = get_dl_db('data/inputs', 'cpu', 1, None)
