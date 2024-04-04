@@ -14,7 +14,7 @@ def action_train(model_name: str, config: dict):
     dl_test = get_dl_test('data/inputs', device, config['bs'], PreprocessorTest)
     dl_val = get_dl_val('data/inputs', device, config['bs'], PreprocessorTest)
     model = Model(device, config)
-    train(model, 100, f'{model}/{model_name}', device, dl_train, dl_test, dl_val, None, False)
+    train(model, 1000, f'{model}/{model_name}', device, dl_train, dl_test, dl_val, None, True)
 
 
 def action_init_db(model_name: str, config: dict):
@@ -107,8 +107,8 @@ if __name__ == '__main__':
             exit(1)
 
     # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    # device = torch.device('cuda')
-    device = torch.device('cpu')
+    device = torch.device('cuda')
+    # device = torch.device('cpu')
     logger.info(f'Using device {device}')
 
     if args.action == 'train': action_train(args.name, config)

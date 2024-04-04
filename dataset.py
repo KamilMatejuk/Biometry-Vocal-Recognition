@@ -103,7 +103,7 @@ def partition(root_dir: str):
 
 
 def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None):
-    datafile = f'partition_db.data' if stage == 'Db' else f'partition_{stage.lower()}_100.data'
+    datafile = f'partition_db.data' if stage == 'Db' else f'partition_{stage.lower()}_full.data'
     data = torch.load(os.path.join(root_dir, datafile))
     dataset = CelebADataset(root_dir, stage, device, data, preprocessor)
     dataset.stats()
