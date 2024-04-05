@@ -22,9 +22,13 @@ def action_init_db(model_name: str, config: dict):
     model = Model(device, config)
     model.load_model_and_optimizer(f'data/checkpoints/{model}/{model_name}.chpt')
     init_empty(f'{model}/{model_name}')
+    counter = 0
     for image, label in tqdm(dl_db):
         embedding = model.get_embedding(image)
-        add(label, embedding)
+        label = f'user_{label.item()}'
+        add(f'{model}/{model_name}', label, embedding)
+        counter += 1
+    logger.info(f'Added {counter} users')
 
 
 def action_add(model_name: str, config: dict):
