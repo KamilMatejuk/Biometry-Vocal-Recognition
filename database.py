@@ -24,6 +24,7 @@ def _path(model_name: str) -> str:
 def init_empty(model_name: str) -> None:
     os.makedirs(os.path.dirname(_path(model_name)), exist_ok=True)
     torch.save([], _path(model_name))
+    logger.info(f'Initialized empty database at {_path(model_name)}')
 
 
 def add(model_name: str, label: str, embedding: torch.Tensor) -> None:
