@@ -103,7 +103,9 @@ def partition(root_dir: str):
 
 
 def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None):
-    datafile = f'partition_db.data' if stage == 'Db' else f'partition_{stage.lower()}_full.data'
+    datafile = f'partition_{stage.lower()}_full.data'
+    if stage == 'Dbi': datafile = f'partition_db_included.data'
+    if stage == 'Dbn': datafile = f'partition_db_not_included.data'
     data = torch.load(os.path.join(root_dir, datafile))
     dataset = CelebADataset(root_dir, stage, device, data, preprocessor)
     dataset.stats()
@@ -117,8 +119,10 @@ def get_dl_test(root_dir: str, device: str, bs: int, preprocessor: Preprocessor 
     return get_dl(root_dir, device, 'Test', bs, False, preprocessor)
 def get_dl_val(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
     return get_dl(root_dir, device, 'Val', bs, False, preprocessor)
-def get_dl_db(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
-    return get_dl(root_dir, device, 'Db', bs, False, preprocessor)
+def get_dl_db_included(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
+    return get_dl(root_dir, device, 'Dbi', bs, False, preprocessor)
+def get_dl_db_not_included(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
+    return get_dl(root_dir, device, 'Dbn', bs, False, preprocessor)
 
 
 if __name__ == '__main__':
@@ -126,4 +130,5 @@ if __name__ == '__main__':
     dl_train = get_dl_train('data/inputs', 'cpu', 1, None)
     dl_test = get_dl_test('data/inputs', 'cpu', 1, None)
     dl_val = get_dl_val('data/inputs', 'cpu', 1, None)
-    dl_db = get_dl_db('data/inputs', 'cpu', 1, None)
+    dl_dbi = get_dl_db_included('data/inputs', 'cpu', 1, None)
+    dl_dbn = get_dl_db_not_included('data/inputs', 'cpu', 1, None)
