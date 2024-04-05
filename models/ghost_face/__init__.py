@@ -83,7 +83,7 @@ class GhostFaceModel(Model):
         x = self.model.conv_head(x)
         x = self.model.act2(x)
         x = x.view(x.size(0), -1)
-        return x
+        return x.flatten().cpu()
     
     def get_classification(self, image, label):
         x = self.model(image)
