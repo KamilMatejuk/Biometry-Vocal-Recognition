@@ -2,7 +2,8 @@ tqdm
 timm
 torch
 pandas
+umap-learn
 matplotlib
 torchvision
 scikit-learn
-umap-learn
+opencv-python
