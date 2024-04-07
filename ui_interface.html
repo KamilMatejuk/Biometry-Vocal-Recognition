@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Auth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+</head>
+<body style="height: 100vh; display: flex; justify-content: center; align-items: center; background: url('ui_bg.jpg'); background-size: cover;">
+    <div style="width: 640px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        <h1 style="text-align: center; font-size: 5rem; margin: 0; color: white;">Face Auth</h1>
+        <div style="position: relative">
+            <div style="position: absolute; top: 0; left: 0; width: 426px; height: 320px; background: black"></div>
+            <video id="cameraView" width="426" height="320" style="margin: auto; transform: scaleX(-1);" autoplay></video>
+            <img src="ui_overlay.png" style="position: absolute; top: 0; left: 0; width: 426px; height: 320px; border: 3px solid white;"/>
+            <div class="overlay"></div>
+        </div>
+        <input style="width: 426px; padding: 10px; text-align: center; font-size: 1.5em;" type="text" id="textInput" placeholder="Enter username">
+        <div style="width: 426px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+            <button style="padding: 10px; font-size: 1.5em;" onclick="captureImage()">Login</button>
+            <button style="padding: 10px; font-size: 1.5em;" onclick="captureImage()">Register</button>
+        </div>
+    </div>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Audiowide", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+        .overlay {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: red;
+            animation: moveOverlay 2s linear infinite alternate;
+        }
+        @keyframes moveOverlay {
+            0% { top: 0;}
+            100% { top: 320px; }
+        }
+
+    </style>
+
+    <script>
+        // Access the video element
+        const video = document.getElementById('cameraView');
+
+        // Access the user's camera
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+            }
+        }
+
+        // Capture image from camera
+        function captureImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageDataUrl = canvas.toDataURL('image/png');
+            // Now you can send the imageDataUrl to your server for further processing
+            console.log('Captured image:', imageDataUrl);
+        }
+
+        // Initialize camera
+        setupCamera();
+    </script>
+</body>
+</html>
