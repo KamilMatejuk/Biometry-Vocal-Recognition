@@ -7,7 +7,10 @@ from loggers import db_logger as logger
 
 def _dist_euclidean(v1: torch.Tensor, v2: torch.Tensor): return torch.norm(v1 - v2)
 def _dist_manhattan(v1: torch.Tensor, v2: torch.Tensor): return torch.sum(torch.abs(v1 - v2))
-def _dist_cosine(v1: torch.Tensor, v2: torch.Tensor):    return torch.dot(v1, v2) / (torch.norm(v1) * torch.norm(v2))
+def _dist_cosine(v1: torch.Tensor, v2: torch.Tensor): 
+    v1 = v1.flatten()
+    v2 = v2.flatten()
+    return -torch.dot(v1, v2) / (torch.norm(v1) * torch.norm(v2))
 
 
 class Distance(Enum):
