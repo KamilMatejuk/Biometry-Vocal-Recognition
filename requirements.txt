@@ -5,3 +5,4 @@ pandas
 matplotlib
 torchvision
 scikit-learn
+umap-learn
