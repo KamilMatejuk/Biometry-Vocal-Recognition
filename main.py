@@ -3,7 +3,7 @@ import torch
 import argparse
 from tqdm import tqdm
 
-from dataset import get_dl_train, get_dl_test, get_dl_val, get_dl_db
+from dataset import get_dl_train, get_dl_test, get_dl_val, get_dl_db_ui_ii
 from database import init_empty, add, get_similar
 from loggers import main_logger as logger
 from train import train
@@ -18,13 +18,13 @@ def action_train(model_name: str, config: dict):
 
 
 def action_init_db(model_name: str, config: dict):
-    dl_db = get_dl_db('data/inputs', device, 1, PreprocessorTest)
+    dl_db = get_dl_db_ui_ii('data/inputs', device, 1, PreprocessorTest)
     model = Model(device, config)
     model.load_model_and_optimizer(f'data/checkpoints/{model}/{model_name}.chpt')
-    init_empty(f'{model}/{model_name}')
     counter = 0
-    for image, label in tqdm(dl_db):
-        embedding = model.get_embedding(image)
+    init_empty(f'{model}/{model_name}')
+    for image, label, _ in tqdm(dl_db):
+        embedding = model.get_embedding(image).cpu().detach().numpy()
         label = f'user_{label.item()}'
         add(f'{model}/{model_name}', label, embedding)
         counter += 1

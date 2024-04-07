@@ -44,3 +44,15 @@ def get_similar(model_name: str, embedding: torch.Tensor, threshold: float, dist
         if d < threshold:
             similar.append(label)
     return similar
+
+def auth(db: list[tuple[str, torch.Tensor]], embedding: torch.Tensor, label: str, threshold: float, distance: Distance):
+    similar = set()
+    if distance == Distance.EUCLIDEAN: dist_func = _dist_euclidean
+    if distance == Distance.MANHATTAN: dist_func = _dist_manhattan
+    if distance == Distance.COSINE: dist_func = _dist_cosine
+    for dbi in db:
+        d = dist_func(embedding, dbi[1])
+        if d < threshold:
+            similar.add(dbi[0])
+    # logger.info(f'Found {len(similar)} in range {threshold} -> {label} {label in similar}')
+    return label in similar
