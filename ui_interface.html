@@ -16,11 +16,12 @@
             <video id="cameraView" width="426" height="320" style="margin: auto; transform: scaleX(-1);" autoplay></video>
             <img src="ui_overlay.png" style="position: absolute; top: 0; left: 0; width: 426px; height: 320px; border: 3px solid white;"/>
             <div class="overlay"></div>
+            <div id="flash" style="position: absolute; top: 0; left: 0; width: 426px; height: 320px; background: white; opacity: 0;"></div>
         </div>
-        <input style="width: 426px; padding: 10px; text-align: center; font-size: 1.5em;" type="text" id="textInput" placeholder="Enter username">
+        <input style="width: 426px; padding: 10px; text-align: center; font-size: 1.5em;" type="text" id="username" placeholder="Enter username">
         <div style="width: 426px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
-            <button style="padding: 10px; font-size: 1.5em;" onclick="captureImage()">Login</button>
-            <button style="padding: 10px; font-size: 1.5em;" onclick="captureImage()">Register</button>
+            <button id="login" style="padding: 10px; font-size: 1.5em; visibility: hidden;" onclick="login()">Login</button>
+            <button id="register" style="padding: 10px; font-size: 1.5em; visibility: hidden;" onclick="register()">Register</button>
         </div>
     </div>
 
@@ -43,12 +44,33 @@
             0% { top: 35px;}
             100% { top: 275px; }
         }
+        .flash-animation {
+            animation: flash 0.2s ease-in-out forwards;
+        }
+        @keyframes flash {
+            0% { opacity: 0;}
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
 
     </style>
 
     <script>
         // Access the video element
         const video = document.getElementById('cameraView');
+        const loginBtn = document.getElementById('login')
+        const registerBtn = document.getElementById('register')
+        const usernameInput = document.getElementById('username')
+
+        usernameInput.addEventListener("input", (event) => {
+            if (event.target.value.length > 0 && video.srcObject) {
+                loginBtn.style.visibility = 'visible'
+                registerBtn.style.visibility = 'visible'
+            } else {
+                loginBtn.style.visibility = 'hidden'
+                registerBtn.style.visibility = 'hidden'
+            }
+        });
 
         // Access the user's camera
         async function setupCamera() {
@@ -57,19 +79,50 @@
                 video.srcObject = stream;
             } catch (err) {
                 console.error('Error accessing camera:', err);
+                loginBtn.style.visibility = 'hidden'
+                registerBtn.style.visibility = 'hidden'
             }
         }
 
         // Capture image from camera
         function captureImage() {
+            // animate
+            fl = document.getElementById('flash')
+            fl.classList.add('flash-animation')
+            setTimeout(() => fl.classList.remove('flash-animation'), 200)
+            // capture
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageDataUrl = canvas.toDataURL('image/png');
-            // Now you can send the imageDataUrl to your server for further processing
-            console.log('Captured image:', imageDataUrl);
+            const imageDataUrl = canvas.toDataURL('image/jpg');
+            return imageDataUrl.slice(22)
+        }
+
+        async function login() {
+            return handle_login_register('login', 'Logged in', 'Failed logging in')
+        }
+
+        async function register() {
+            return handle_login_register('register', 'Created new account', 'Failed creating new account')
+        }
+
+        async function handle_login_register(endpoint, message_pass, message_fail) {
+            try {
+                const url = `http://127.0.0.1:8080/${endpoint}`
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "username": usernameInput.value, 'image_base64': captureImage() }),
+                })
+                const responseData = await response.json();
+                console.log(responseData);
+                if (responseData.successfull) { alert(message_pass) }
+                else if(responseData.message) { alert(`${message_fail}:\n${responseData.message}`) }
+                else if(responseData.detail) { alert(`${message_fail}:\n${JSON.stringify(responseData.detail)}`) }
+                else { alert(`${message_fail}`) }
+            } catch (err) { alert(`${message_fail}:\n${err}`) }
         }
 
         // Initialize camera

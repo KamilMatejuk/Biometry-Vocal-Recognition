@@ -18,6 +18,14 @@ git submodule update --init --recursive
 python3 preprocess_dataset.py
 python3 dataset.py
 ```
+### Uruchomienie serwera
+```
+$ python -m uvicorn server:app --host 127.0.0.1 --port 8080
+```
+## Uruchomienie UI
+```
+otworzyć w przeglądarce file://$(pwd)/ui_interface.html
+```
 ### Rozważane modele
 | model | source | submodule |
 |:-|:-:|:-:|

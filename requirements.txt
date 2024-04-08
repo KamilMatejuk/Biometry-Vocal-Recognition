@@ -2,6 +2,8 @@ tqdm
 timm
 torch
 pandas
+fastapi
+uvicorn
 umap-learn
 matplotlib
 torchvision
