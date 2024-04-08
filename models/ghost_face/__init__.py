@@ -74,16 +74,17 @@ class GhostFaceModel(Model):
         self.to_device()
 
     def get_embedding(self, image):
-        # forward without self.classifier call
-        x = self.model.conv_stem(image)
-        x = self.model.bn1(x)
-        x = self.model.act1(x)
-        x = self.model.blocks(x)
-        x = self.model.global_pool(x)
-        x = self.model.conv_head(x)
-        x = self.model.act2(x)
-        x = x.view(x.size(0), -1)
-        return x.flatten().cpu()
+        with torch.no_grad():
+            # forward without self.classifier call
+            x = self.model.conv_stem(image)
+            x = self.model.bn1(x)
+            x = self.model.act1(x)
+            x = self.model.blocks(x)
+            x = self.model.global_pool(x)
+            x = self.model.conv_head(x)
+            x = self.model.act2(x)
+            x = x.view(x.size(0), -1)
+            return x.flatten().cpu()
     
     def get_classification(self, image, label):
         x = self.model(image)

@@ -14,10 +14,12 @@ from models import Preprocessor
 class CelebADataset(torch.utils.data.Dataset):
     def __init__(self, dir: str, name: str, device: str,
                  data: list[tuple[str, int]] | None,
-                 preprocessor: Preprocessor | None):
+                 preprocessor: Preprocessor | None,
+                 folder: str = 'images_resized'):
         self.dir = dir
         self.name = name
         self.device = device
+        self.folder = folder
         self.preprocessor = preprocessor
         if data is not None:
             self.data = data
@@ -36,14 +38,14 @@ class CelebADataset(torch.utils.data.Dataset):
         if label not in self.labels: return
         if img_name not in self.imgs: return
         # check existance
-        assert os.path.exists(os.path.join(self.dir, 'images_resized', img_name)),\
+        assert os.path.exists(os.path.join(self.dir, self.folder, img_name)),\
             logger.error(f'Couldn\'t find {img_name}')
         # save reference to memmory
         self.data.append((img_name, label))
 
     def __getitem__(self, i: int):
         img_name, label = self.data[i]
-        img = Image.open(os.path.join(self.dir, 'images_resized', img_name))
+        img = Image.open(os.path.join(self.dir, self.folder, img_name))
         if self.preprocessor is not None:
             img = self.preprocessor.preprocess(img)
         label = torch.tensor(label).long()
@@ -60,18 +62,18 @@ class CelebADataset(torch.utils.data.Dataset):
 
 class CelebADatasetDB(CelebADataset):
     def __getitem__(self, i: int):
-        img_name, label, correct = self.data[i]
-        img = Image.open(os.path.join(self.dir, 'images_resized', img_name))
-        if self.preprocessor is not None:
-            img = self.preprocessor.preprocess(img)
-        else:
-            img = transforms.Compose([
-                # transforms.Resize((128, 128)),
-                transforms.ToTensor(),
-            ])(img)
+        embed, label, correct = self.data[i]
+        # img = Image.open(os.path.join(self.dir, self.folder, embed))
+        # if self.preprocessor is not None:
+            # embed = self.preprocessor.preprocess(img)
+        # else:
+        #     img = transforms.Compose([
+        #         # transforms.Resize((128, 128)),
+        #         transforms.ToTensor(),
+        #     ])(img)
         label = torch.tensor(label).long()
         correct = torch.tensor(correct).bool()
-        return img.to(self.device), label.to(self.device), correct.to(self.device)
+        return embed.to(self.device), label.to(self.device), correct.to(self.device)
 
 
 def partition(root_dir: str):
@@ -128,10 +130,10 @@ def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, prepr
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
     return dataloader
 
-def get_dl_db(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None):
-    datafile = f'partition_db_{stage.lower()}.data'
+def get_dl_db(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+    datafile = f'partition_db_{stage}.data'
     data = torch.load(os.path.join(root_dir, datafile))
-    dataset = CelebADatasetDB(root_dir, stage, device, data, preprocessor)
+    dataset = CelebADatasetDB(root_dir, stage, device, data, preprocessor, folder)
     dataset.stats()
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
     return dataloader
@@ -144,12 +146,12 @@ def get_dl_test(root_dir: str, device: str, bs: int, preprocessor: Preprocessor 
 def get_dl_val(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
     return get_dl(root_dir, device, 'Val', bs, False, preprocessor)
 
-def get_dl_db_un(root_dir: str, device: str, preprocessor: Preprocessor | None):
-    return get_dl_db(root_dir, device, 'users_not_included', 1, False, preprocessor)
-def get_dl_db_ui_ii(root_dir: str, device: str, preprocessor: Preprocessor | None):
-    return get_dl_db(root_dir, device, 'users_included_images_included', 1, False, preprocessor)
-def get_dl_db_ui_in(root_dir: str, device: str, preprocessor: Preprocessor | None):
-    return get_dl_db(root_dir, device, 'users_included_images_not_included', 1, False, preprocessor)
+def get_dl_db_un(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+    return get_dl_db(root_dir, device, 'users_not_included_E', 1, False, preprocessor, folder)
+def get_dl_db_ui_ii(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+    return get_dl_db(root_dir, device, 'users_included_images_included_E', 1, False, preprocessor, folder)
+def get_dl_db_ui_in(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+    return get_dl_db(root_dir, device, f'users_included_images_not_included_E_{folder}', 1, False, preprocessor, folder)
 
 
 def prepare_db(root_dir: str):
