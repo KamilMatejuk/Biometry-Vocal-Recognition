@@ -6,13 +6,10 @@ dataset_logger = logging.getLogger('dataset')
 train_logger = logging.getLogger('train')
 db_logger = logging.getLogger('db')
 
-arc_face_logger = logging.getLogger('arc_face')
-deep_face_logger = logging.getLogger('deep_face')
-ghost_face_logger = logging.getLogger('ghost_face')
-insight_face_logger = logging.getLogger('insight_face')
+example_logger = logging.getLogger('example')
 
 
-__model_loggers__ = [arc_face_logger, deep_face_logger, ghost_face_logger, insight_face_logger]
+__model_loggers__ = [example_logger]
 __all_loggers__ = [main_logger, dataset_logger, train_logger, db_logger] + __model_loggers__
 
 

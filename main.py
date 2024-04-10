@@ -64,10 +64,10 @@ def action_auth(model_name: str, config: dict):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', choices=['arc', 'deep', 'ghost', 'insight'], required=True)
-    parser.add_argument('-n', '--name', default='init')
-    parser.add_argument('-a', '--action', choices=['train', 'init_db', 'add', 'auth'], required=True)
-    parser.add_argument('-c', '--config', default='config.yml')
+    parser.add_argument('-m', '--model', choices=['example'], required=True, help='Name of model to use, e.g. example')
+    parser.add_argument('-n', '--name', default='init', help='Name of specific experiment')
+    parser.add_argument('-a', '--action', choices=['train', 'init_db', 'add', 'auth'], required=True, help='What to do?')
+    parser.add_argument('-c', '--config', default='config.yml', help='YAML file with configuration')
     args = parser.parse_args()
     
     with open(args.config) as f:
@@ -77,41 +77,17 @@ if __name__ == '__main__':
     logger.info(f'Loaded config from {args.config}')
     logger.debug(config)
     
-    if args.model == 'arc':
+    if args.model == 'example':
         try:
-            from models.arc_face import ArcFaceModel as Model
-            from models.arc_face import ArcFacePreprocessorTrain as PreprocessorTrain
-            from models.arc_face import ArcFacePreprocessorTest as PreprocessorTest
-        except Exception as ex:
-            logger.exception(f'Cannot import wrapper for ArcFace model: {ex}')
-            exit(1)
-    elif args.model == 'deep':
-        try:
-            from models.deep_face import DeepFaceModel as Model
-            from models.deep_face import DeepFacePreprocessor as PreprocessorTrain
-            from models.deep_face import DeepFacePreprocessor as PreprocessorTest
-        except Exception as ex:
-            logger.exception(f'Cannot import wrapper for DeepFace model: {ex}')
-            exit(1)
-    elif args.model == 'ghost':
-        try:
-            from models.ghost_face import GhostFaceModel as Model
-            from models.ghost_face import GhostFacePreprocessorTrain as PreprocessorTrain
-            from models.ghost_face import GhostFacePreprocessorTest as PreprocessorTest
+            from models.example import ExampleModel as Model
+            from models.example import ExamplePreprocessorTrain as PreprocessorTrain
+            from models.example import ExamplePreprocessorTest as PreprocessorTest
         except Exception as ex:
             logger.exception(f'Cannot import wrapper for GhostFace model: {ex}')
             exit(1)
-    elif args.model == 'insight':
-        try:
-            from models.insight_face import InsightFaceModel as Model
-            from models.insight_face import InsightFacePreprocessor as PreprocessorTrain
-            from models.insight_face import InsightFacePreprocessor as PreprocessorTest
-        except Exception as ex:
-            logger.exception(f'Cannot import wrapper for InsightFace model: {ex}')
-            exit(1)
 
-    # device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    device = torch.device('cuda')
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # device = torch.device('cuda')
     # device = torch.device('cpu')
     logger.info(f'Using device {device}')
 

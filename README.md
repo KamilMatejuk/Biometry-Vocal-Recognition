@@ -1,35 +1,54 @@
-# Biometria - Projekt 1 - uwierzytelnianie na podstawie twarzy
+# Biometria - Projekt 2 - uwierzytelnianie na podstawie głosu
 
-### Informacje
-* [polecenie](https://www.syga.ai.pwr.edu.pl/courses/bio/P1.pdf)
-* [wykłady](https://www.syga.ai.pwr.edu.pl/courses/bio/lec.html)
-  * [introduction](https://www.syga.ai.pwr.edu.pl/courses/bio/lec.html)
-  * [wprowadzenie do biometrii](https://www.syga.ai.pwr.edu.pl/courses/bio/l01.pdf)
-    [transformata Fouriera, Convolution theorem, Eigenfaces](https://www.syga.ai.pwr.edu.pl/courses/bio/l03.pdf)
-* [raport](./raport.pdf)
-### Uruchomienie
+## Setup
+1. Inicjalizacja środowiska
 ```
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
-git submodule update --init --recursive
-# bash models/arc_face/setup.sh
-# download dataset
-python3 preprocess_dataset.py
-python3 dataset.py
+pip install -r requirements.txt
 ```
-### Uruchomienie serwera
+2. Dodanie wykorzystywanego modelu
 ```
-$ python -m uvicorn server:app --host 127.0.0.1 --port 8080
+git submodule add <model-url> models/<model-name>/src
 ```
-## Uruchomienie UI
+3. Dodanie loggera w pliku `loggers.py` (podobnie jak `example_logger`)
+4. Stworzenie nakładki na model w pliku `models/<model-name>/__init__.py` (zgodnie z szablonem z `models/example/__init__.py`)
+   1. Parametry do finetuningu można dodać do pliku `config.yml`
+5. [Opcjonalnie] Dodanie skryptu `models/<model-name>/setup.sh` który np zmieni importy w `src` na relatywne (zobacz `models/example/setup.sh`)
+6. Pobranie datasetu do folderu `data/inputs/images` oraz `data/inputs/identities.txt` zawierające nazwę pliku i klasę/użytkownika
+7. [Opcjinalnie] Aby dodać szum albo inne zniekształcenia do datasetu, można zainspirować się `dataset_modification.py`
+8. Przerobić `dataset.py` aby działał z dźwiękiem (ten plik powinien wygenerować pliki zawierające odpowiednie partycje)
+9. Do testów hiperparametrów można posłużyć się plikiem `run.sh`
+10. Otworzyć UI w przegldarce jako plik `ui_interface.html` i uruchomić serwer
 ```
-otworzyć w przeglądarce file://$(pwd)/ui_interface.html
+python -m uvicorn server:app --host 127.0.0.1 --port 8080
 ```
-### Rozważane modele
-| model | source | submodule |
-|:-|:-:|:-:|
-|ArcFace | [source](https://github.com/ronghuaiyang/arcface-pytorch) | [submodule](./models/arc_face/) |
-|DeepFace | [source](https://github.com/serengil/deepface) | [submodule](./models/deep_face/) |
-|GhostFace | [source](https://github.com/Hazqeel09/ellzaf_ml#ghostfacenets) | [submodule](./models/ghost_face/) |
-|InsightFace | [source](https://github.com/TreB1eN/InsightFace_Pytorch) | [submodule](./models/insight_face/) |
+
+
+## Struktura danych
+### Folder `models/`
+```bash
+models/                   # folder z modelami
+|---example/              # folder z konkretnym modelem
+|   |---src/              # folder z kodem źródłowym modelu dodanym jako submodule
+|   |---__init__.py       # nakładka na kod źródłowy modelu
+|---__init__.py           # interface nakładki
+```
+### Folder `data/`
+```bash
+data/                     # folder z danymi (in & out)
+|---checkpoints/          # folder z zapisanymi modelami
+|   |---example/          # dla modelu example
+|       |---name.chpt     # dla eksperymentu o nazwie <name>
+|---embeddings/           # folder z zapisanymi reprezentacjami wektorowymi danych
+|   |---example/          # dla modelu example
+|       |---name.db       # dla basy danych stworzonej na podstawie eksperymentu o nazwie <name>
+|---inputs/               # folder z danymi wejściowymi
+|   |---images/           # zwykłe dane wejściowe
+|   |---images_noise/     # dane wejściowe po nałożeniu np szumu
+|   |---identities.txt    # plik z rozpisanymi przypisaniami klasy do pliku w images/
+|   |---partition_test.db # plik z rozpisanymi przypisaniami klasy do pliku w images/ dla konkretnego zbioru (testowy, treningowy, etc)
+|---metrics/              # folder z wynikami eksperymentów (loss, accuracy, etc)
+    |---example/          # dla modelu example
+        |---name.csv      # dla eksperymentu o nazwie <name>
+```

@@ -11,8 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from dataset import get_dl_db_ui_ii
 from database import auth, Distance
-from models.ghost_face import GhostFaceModel as Model
-from models.ghost_face import GhostFacePreprocessorTest as PreprocessorTest
+from models.example import ExampleModel as Model
+from models.example import ExamplePreprocessorTest as PreprocessorTest
 
 
 app = FastAPI()
@@ -31,10 +31,11 @@ dl_db_ui_ii = get_dl_db_ui_ii('data/inputs', 'cpu', None)
 
 with open('config.yml') as f:
     config = yaml.safe_load(f)
-config = config.get('ghost', {}).get('all', {})
+config = config.get('example', {}).get('all', {})
 
 model = Model('cpu', config)
-model.load_model_and_optimizer(f'data/checkpoints/{model}/full_ds.chpt')
+name = 'full_ds'
+model.load_model_and_optimizer(f'data/checkpoints/{model}/{name}.chpt')
 
 # load database
 database = []
@@ -74,5 +75,4 @@ async def register(body: Request):
         database.append((embedding, body.username))
         return { 'successfull': True, 'message': '' }
     except Exception as ex:
-        raise ex
         return { 'successfull': False, 'message': str(ex) }

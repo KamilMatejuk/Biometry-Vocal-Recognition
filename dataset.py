@@ -13,7 +13,7 @@ from models import Preprocessor
 
 class CelebADataset(torch.utils.data.Dataset):
     def __init__(self, dir: str, name: str, device: str,
-                 data: list[tuple[str, int]] | None,
+                 data: list[tuple[str, int]],
                  preprocessor: Preprocessor | None,
                  folder: str = 'images_resized'):
         self.dir = dir
@@ -21,27 +21,7 @@ class CelebADataset(torch.utils.data.Dataset):
         self.device = device
         self.folder = folder
         self.preprocessor = preprocessor
-        if data is not None:
-            self.data = data
-        else:
-            self.data = []
-            with open(os.path.join(self.dir, 'identities.txt')) as f:
-                for line in f.readlines():
-                    self._load_labels_line(line)
-        # ids = sorted(list(map(lambda x: x[1], self.data)))[:100_000]
-        # self.data = list(filter(lambda x: x[1] in ids, self.data))
-
-    def _load_labels_line(self, line: str):
-        img_name = line.split(' ')[0].strip()
-        label = int(line.split(' ')[1])
-        # check if correct dataset
-        if label not in self.labels: return
-        if img_name not in self.imgs: return
-        # check existance
-        assert os.path.exists(os.path.join(self.dir, self.folder, img_name)),\
-            logger.error(f'Couldn\'t find {img_name}')
-        # save reference to memmory
-        self.data.append((img_name, label))
+        self.data = data
 
     def __getitem__(self, i: int):
         img_name, label = self.data[i]
@@ -60,17 +40,9 @@ class CelebADataset(torch.utils.data.Dataset):
         logger.debug(f'{self.name} has {images} images of {labels} celebrities (avg {images/labels:.2f} img/celeb)')
 
 
-class CelebADatasetDB(CelebADataset):
+class CelebADatasetEmbed(CelebADataset):
     def __getitem__(self, i: int):
         embed, label, correct = self.data[i]
-        # img = Image.open(os.path.join(self.dir, self.folder, embed))
-        # if self.preprocessor is not None:
-            # embed = self.preprocessor.preprocess(img)
-        # else:
-        #     img = transforms.Compose([
-        #         # transforms.Resize((128, 128)),
-        #         transforms.ToTensor(),
-        #     ])(img)
         label = torch.tensor(label).long()
         correct = torch.tensor(correct).bool()
         return embed.to(self.device), label.to(self.device), correct.to(self.device)
@@ -94,7 +66,7 @@ def partition(root_dir: str):
     labels = list(map(lambda x: x[1], data))
     logger.debug(f'Data length after filtering: {len(data)}')
     CelebADataset(root_dir, 'all', 'cpu', data, None).stats()
-    # exclude db (100 users)
+    # exclude authentication db (100 users)
     labels_db = sorted(list(set(labels)))[-100:]
     data_db = list(filter(lambda x: x[1] in labels_db, data))
     torch.save(data_db, os.path.join(root_dir, f'partition_db.data'))
@@ -133,7 +105,7 @@ def get_dl(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, prepr
 def get_dl_db(root_dir: str, device: str, stage: str, bs: int, shuffle: bool, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
     datafile = f'partition_db_{stage}.data'
     data = torch.load(os.path.join(root_dir, datafile))
-    dataset = CelebADatasetDB(root_dir, stage, device, data, preprocessor, folder)
+    dataset = CelebADatasetEmbed(root_dir, stage, device, data, preprocessor, folder)
     dataset.stats()
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
     return dataloader
@@ -146,11 +118,11 @@ def get_dl_test(root_dir: str, device: str, bs: int, preprocessor: Preprocessor 
 def get_dl_val(root_dir: str, device: str, bs: int, preprocessor: Preprocessor | None):
     return get_dl(root_dir, device, 'Val', bs, False, preprocessor)
 
-def get_dl_db_un(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+def get_dl_db_un(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images'):
     return get_dl_db(root_dir, device, 'users_not_included_E', 1, False, preprocessor, folder)
-def get_dl_db_ui_ii(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+def get_dl_db_ui_ii(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images'):
     return get_dl_db(root_dir, device, 'users_included_images_included_E', 1, False, preprocessor, folder)
-def get_dl_db_ui_in(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images_resized'):
+def get_dl_db_ui_in(root_dir: str, device: str, preprocessor: Preprocessor | None, folder: str = 'images'):
     return get_dl_db(root_dir, device, f'users_included_images_not_included_E_{folder}', 1, False, preprocessor, folder)
 
 
