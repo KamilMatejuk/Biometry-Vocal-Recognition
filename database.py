@@ -45,7 +45,7 @@ def add(model_name: str, label: str, embedding: torch.Tensor) -> None:
     vectors = get_db(model_name)
 
     user_vectors = vectors_raw[label] if vectors_raw.get(label) is not None else []
-    user_vectors.apppend(embedding)
+    user_vectors.append(embedding)
 
     vectors[label] = torch.mean(torch.stack(user_vectors), dim=0)
     vectors_raw[label] = user_vectors
