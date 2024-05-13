@@ -9,5 +9,5 @@ matplotlib
 torchvision
 scikit-learn
 opencv-python
-torchaudio-2.0.1
-wespeaker
+torchaudio==2.0.1
+git+https://github.com/wenet-e2e/wespeaker.git
