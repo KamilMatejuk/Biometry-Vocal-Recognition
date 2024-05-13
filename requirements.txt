@@ -9,3 +9,5 @@ matplotlib
 torchvision
 scikit-learn
 opencv-python
+torchaudio-2.0.1
+wespeaker

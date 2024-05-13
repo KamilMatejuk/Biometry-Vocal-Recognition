@@ -29,33 +29,49 @@ def init_empty(model_name: str) -> None:
     torch.save([], _path(model_name))
     logger.info(f'Initialized empty database at {_path(model_name)}')
 
+def get_db(model_name: str):
+    return torch.load(_path(f'{model_name}'))
+def get_db_raw(model_name: str):
+    return torch.load(_path(f'{model_name}_raw'))
+def save_db(model_name: str, vectors):
+    os.makedirs(os.path.dirname(_path(f'{model_name}')), exist_ok=True)
+    torch.save(vectors, _path(f'{model_name}'))
+def save_db_raw(model_name: str, vectors_raw):
+    os.makedirs(os.path.dirname(_path(f'{model_name}_raw')), exist_ok=True)
+    torch.save(vectors_raw, _path(f'{model_name}_raw'))
 
 def add(model_name: str, label: str, embedding: torch.Tensor) -> None:
-    vectors: list[tuple[str, torch.Tensor]] = torch.load(_path(model_name))
-    vectors.append((label, embedding))
-    torch.save(vectors, _path(model_name))
+    vectors_raw = get_db_raw(model_name)
+    vectors = get_db(model_name)
 
+    user_vectors = vectors_raw[label] if vectors_raw.get(label) is not None else []
+    user_vectors.apppend(embedding)
 
-def get_similar(model_name: str, embedding: torch.Tensor, threshold: float, distance: Distance) -> list[str]:
-    vectors: list[tuple[str, torch.Tensor]] = torch.load(_path(model_name))
-    similar = []
+    vectors[label] = torch.mean(torch.stack(user_vectors), dim=0)
+    vectors_raw[label] = user_vectors
+
+    save_db_raw(model_name, vectors_raw)
+    save_db(model_name, vectors)
+
+def get_similar(model_name: str, embedding: torch.Tensor, distance: Distance) -> str:
+    vectors = get_db(model_name)
+
+    best_label = None
+    best_distance = 10000000
+
     if distance == Distance.EUCLIDEAN: dist_func = _dist_euclidean
     if distance == Distance.MANHATTAN: dist_func = _dist_manhattan
     if distance == Distance.COSINE: dist_func = _dist_cosine
-    for label, vector in vectors:
-        d = dist_func(embedding, vector)
-        if d < threshold:
-            similar.append(label)
-    return similar
 
-def auth(db: list[tuple[str, torch.Tensor]], embedding: torch.Tensor, label: str, threshold: float, distance: Distance):
-    similar = set()
-    if distance == Distance.EUCLIDEAN: dist_func = _dist_euclidean
-    if distance == Distance.MANHATTAN: dist_func = _dist_manhattan
-    if distance == Distance.COSINE: dist_func = _dist_cosine
-    for dbi in db:
-        d = dist_func(embedding, dbi[0])
-        if d < threshold:
-            similar.add(dbi[1])
-    # logger.info(f'Found {len(similar)} in range {threshold} -> {label} {label in similar}')
-    return label in similar
+    for label, avg_embedding in vectors.items():
+        d = dist_func(avg_embedding, embedding)
+        if d < best_distance:
+            best_distance = d
+            best_label = label
+
+    return best_label
+
+def auth(model_name: str, embedding: torch.Tensor, label: str, distance: Distance) -> bool:
+    best_label = get_similar(model_name, embedding, distance)
+
+    return best_label == label

@@ -1,3 +1,0 @@
-[submodule "models/example/src"]
-	path = models/example/src
-	url = git@github.com:huawei-noah/Efficient-AI-Backbones.git
