@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sound Auth</title>
+    <title>Vocal Auth</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
 </head>
 <body style="height: 100vh; display: flex; justify-content: center; align-items: center; background: url('ui_bg.jpg'); background-size: cover;">
     <div style="width: 640px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
-        <h1 style="text-align: center; font-size: 5rem; margin: 0; color: white;">Sound Auth</h1>
+        <h1 style="text-align: center; font-size: 5rem; margin: 0; color: white;">Vocal Auth</h1>
         <div style="position: relative">
-            <div style="position: absolute; top: 0; left: 0; width: 426px; height: 320px; background: black"></div>
-            <button onclick="startRecording()">Start Recording</button>
-            <button onclick="stopRecording()">Stop Recording</button>
+            <img id="bg" src="ui_overlay.png">
+            <button id="recordSwitch" onclick="switchRecording(event)"><span class="material-symbols-outlined">play_arrow</span></button>
             <audio id="recordingPlayer" controls></audio>
         </div>
         <input style="width: 426px; padding: 10px; text-align: center; font-size: 1.5em;" type="text" id="username" placeholder="Enter username">
-        <div style="width: 426px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
-            <button id="login" style="padding: 10px; font-size: 1.5em; visibility: hidden;" onclick="login()">Login</button>
-            <button id="register" style="padding: 10px; font-size: 1.5em; visibility: hidden;" onclick="register()">Register</button>
-            <button id="identify" style="padding: 10px; font-size: 1.5em; visibility: hidden;" onclick="identify()">Identify</button>
+        <div style="width: 426px; display: grid; grid-template-columns: 1fr; gap: 5px">
+            <button id="login" style="padding: 10px; font-size: 1.5em;" onclick="login()">Login</button>
+            <button id="register" style="padding: 10px; font-size: 1.5em;" onclick="register()">Register</button>
+            <button id="identify" style="padding: 10px; font-size: 1.5em;" onclick="identify()">Identify</button>
         </div>
     </div>
 
@@ -44,18 +44,28 @@
             0% { top: 35px;}
             100% { top: 275px; }
         }
-        .flash-animation {
-            animation: flash 0.2s ease-in-out forwards;
+        #recordingPlayer {
+            display: none;
         }
-        @keyframes flash {
-            0% { opacity: 0;}
-            50% { opacity: 1; }
-            100% { opacity: 0; }
+        #recordSwitch {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            color: white;
+            transform: translate(-50%, -50%);
+            background: transparent;
+            border-radius: 50%;
+            border: 3px solid white;
         }
-
+        #recordSwitch span {
+            font-size: 5em;
+        }
     </style>
 
     <script>
+        const waveBg = document.getElementById('bg')
         const recordingPlayer = document.getElementById('recordingPlayer'); 
         const loginBtn = document.getElementById('login')
         const registerBtn = document.getElementById('register')
@@ -65,15 +75,30 @@
         let stream;
         let mediaRecorder;
 
-        usernameInput.addEventListener("input", (event) => {
-            if (event.target.value.length > 0 && recordingPlayer.src) {
-                loginBtn.style.visibility = 'visible'
-                registerBtn.style.visibility = 'visible'
+        function blobToBase64(blob) {
+            return new Promise((resolve, _) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+          }
+
+        async function switchRecording(e) {
+            let recording = e.target.getAttribute('recording')
+            if (recording == "true") {
+                e.target.setAttribute('recording', false)
+                if (e.target.querySelector('span')) e.target.querySelector('span').textContent = 'play_arrow'
+                else e.target.textContent = 'play_arrow'
+                waveBg.style.border = '2px solid white'
+                stopRecording()
             } else {
-                loginBtn.style.visibility = 'hidden'
-                registerBtn.style.visibility = 'hidden'
+                startRecording()
+                e.target.setAttribute('recording', true)
+                if (e.target.querySelector('span')) e.target.querySelector('span').textContent = 'pause'
+                else e.target.textContent = 'pause'
+                waveBg.style.border = '2px solid red'
             }
-        });
+        }
 
         async function startRecording() {
             try {
@@ -85,10 +110,9 @@
                     chunks.push(event.data);
                 }
 
-                mediaRecorder.onstop = function() {
+                mediaRecorder.onstop = async function() {
                     const blob = new Blob(chunks, { 'type' : 'audio/wav' });
-                    const audioUrl = window.URL.createObjectURL(blob);
-                    recordingPlayer.src = audioUrl;
+                    recordingPlayer.data = (await blobToBase64(blob)).slice(22)
                 }
 
                 mediaRecorder.start();
@@ -112,17 +136,17 @@
         }
         
         async function identify() {
-            return handle_endpoint('identify', 'Created new account', 'Failed creating new account')
+            return handle_endpoint('identify', 'Identified', 'Failed identyfing')
         }
 
         async function handle_endpoint(endpoint, message_pass, message_fail) {
-            if (recordingPlayer.src) {
+            if (recordingPlayer.data) {
                 try {
                     const url = `http://127.0.0.1:8080/${endpoint}`
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ "username": usernameInput.value, 'sound_file': recordingPlayer.src }),
+                        body: JSON.stringify({ "username": usernameInput.value, 'sound_base64': recordingPlayer.data }),
                     })
                     const responseData = await response.json();
                     console.log(responseData);
